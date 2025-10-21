@@ -3,4 +3,3 @@ pillow
 pdf2image 
 openai
 tesseract
-poppler
