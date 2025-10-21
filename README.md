@@ -1,0 +1,3 @@
+- ocr_processing - turns PDFs to images, transcribes images using Tessaract and AI correction, compiles pages back into one txt file
+    - files - Ain't I A Woman, Big Mamma Rag, Do it NOW, and Gold Flower - issues all from 1973-1974
+- (need to decide what method/methods to use from here)
