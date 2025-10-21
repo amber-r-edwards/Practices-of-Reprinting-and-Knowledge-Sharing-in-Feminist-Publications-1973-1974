@@ -242,13 +242,11 @@ IMPORTANT: Process the ENTIRE text from beginning to end. Do not stop early or t
 
 Rules:
 1. Fix obvious OCR errors (like '0' instead of 'O', '1' instead of 'l')
-2. Add appropriate punctuation and capitalization
-3. Fix spacing and line breaks where needed
-4. Preserve the original meaning and historical context
-5. If a word is unclear, make your best guess based on context
-6. Do not add any additional text
-7. Do not delete any text unless correcting an obvious error
-8. Process EVERY line - do not skip any content
+2. Preserve the original line breaks and text blocks.
+3. Preserve the original meaning and historical context
+4. Do not add any additional text
+5. Do not delete any text unless correcting an obvious error
+6. Process EVERY line - do not skip any content
 
 Original OCR text:
 {text}
