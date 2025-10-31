@@ -22,7 +22,7 @@ from PIL import Image
 import pytesseract
 from pdf2image import convert_from_path
 from openai import OpenAI
-
+import csv
 
 # Configuration
 PDF_DIR = "pdfs"
@@ -265,10 +265,10 @@ Corrected text:"""
         print(f"❌ Error correcting text with AI: {e}")
         return text  # Return original text if correction fails
 
-
 def process_pdf(pdf_filename, api_key):
     """
     Process a PDF file: OCR + AI correction.
+    Save each page as individual text file in publication subdirectory.
     
     Args:
         pdf_filename (str): Name of PDF file in pdfs directory
@@ -278,18 +278,39 @@ def process_pdf(pdf_filename, api_key):
         bool: True if successful, False otherwise
     """
     pdf_path = os.path.join(PDF_DIR, pdf_filename)
-    output_filename = Path(pdf_filename).stem + ".txt"
-    output_path = os.path.join(OUTPUT_DIR, output_filename)
+    base_name = Path(pdf_filename).stem
+    
+    # Map PDF filenames to publication names
+    publication_mapping = {
+        'AintIAWoman': 'AintIAWoman',
+        'BigMammaRag': 'BigMammaRag',
+        'DoItNow': 'DoItNow',
+        'GoldFlower': 'GoldFlower'
+    }
+    
+    # Determine publication name from filename
+    publication_name = None
+    for key in publication_mapping:
+        if key.lower() in base_name.lower():
+            publication_name = publication_mapping[key]
+            break
+    
+    if not publication_name:
+        print(f"⚠️  Warning: Could not determine publication for {pdf_filename}")
+        publication_name = "Unknown"
+    
+    # Create publication subdirectory
+    output_dir_path = Path(OUTPUT_DIR) / publication_name
+    os.makedirs(output_dir_path, exist_ok=True)
     
     print("\n" + "="*80)
     print(f"Processing: {pdf_filename}")
+    print(f"Publication: {publication_name}")
+    print(f"Output directory: {output_dir_path}")
     print("="*80)
     
     # Create OpenAI client
     client = OpenAI(api_key=api_key)
-    
-    # Create output directory
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     # Create temporary directory
     temp_dir = tempfile.mkdtemp(prefix=TEMP_DIR_PREFIX)
@@ -303,7 +324,7 @@ def process_pdf(pdf_filename, api_key):
         
         # Process each page
         print(f"\n🔍 Processing {len(image_paths)} pages...")
-        corrected_pages = []
+        pages_saved = 0
         
         for idx, image_path in enumerate(image_paths, 1):
             print(f"\n[Page {idx}/{len(image_paths)}]")
@@ -321,20 +342,20 @@ def process_pdf(pdf_filename, api_key):
             
             # Correct with AI
             corrected_text = correct_text_with_ai(cleaned_text, client, idx)
-            corrected_pages.append(corrected_text)
             
+            # Save individual page file
+            page_filename = f"{base_name}_page{idx:03d}.txt"
+            page_output_path = output_dir_path / page_filename
+            
+            with open(page_output_path, 'w', encoding='utf-8') as f:
+                f.write(corrected_text)
+            
+            print(f"  💾 Saved: {publication_name}/{page_filename}")
             print(f"  ✅ Page {idx} complete")
+            
+            pages_saved += 1
         
-        # Combine all pages
-        print(f"\n📝 Combining {len(corrected_pages)} pages...")
-        combined_text = '\n\n'.join(corrected_pages)
-        
-        # Save to file
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(combined_text)
-        
-        print(f"\n✅ Saved to: {output_path}")
-        print(f"📊 Total characters: {len(combined_text)}")
+        print(f"\n✅ All {pages_saved} pages saved to: {output_dir_path}")
         
         return True
     
@@ -381,7 +402,7 @@ def main():
         
         if success:
             print("\n" + "="*80)
-            print("✅ Processing complete!")
+            print(f"✅ Processing complete!")
         else:
             print("\n" + "="*80)
             print("⚠️  Processing encountered errors")
@@ -395,7 +416,6 @@ def main():
             break
     
     print("="*80)
-
 
 if __name__ == "__main__":
     main()
