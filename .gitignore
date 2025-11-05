@@ -1,3 +1,4 @@
 pdfs/ 
 venv/
 semanticsimilaritytest/
+txtfiles/*.txt
