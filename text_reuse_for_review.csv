@@ -1,0 +1,8 @@
+source_page_id,target_page_id,source_publication,target_publication,source_date,target_date,time_lag_days,source_volume,source_number,target_volume,target_number,source_text_length,target_text_length,matched_text,match_length_words,match_length_chars,similarity_score,position_text1,position_text2,match_pct_source,match_pct_target,match_length_category,match_type_auto,is_boilerplate,source_context,target_context,verified_match_type,notes
+158,524,BigMammaRag,GoldFlower,2074-07-01,2074-08-01,31,3.0,1.0,3.0,3.0,6875,3356,studies are controlled by men or locked into a system that does not allow adequate,15,82,0.9025974025974026,414,295,1.1927272727272726,2.443384982121573,short,quoted_passage,False," that there will be greater academic freedom than found at any college or university offering women’s studies.
+
+“present courses leave something to be desired,” she said. “in many schools the women’s studies are controlled by men or locked into a system that does not allow adequate freedom for maximum intellectual growth.”
+
+dr. peters, of goddard college in plainfield, vt., and brooklyn, n.y., told how the institute got its name.
+
+“the name was taken from the sagaris, the doubl",studies are controlled by men or locked into a system that does not allow adequate,,
