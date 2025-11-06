@@ -534,12 +534,12 @@ def main():
     create_publication_network(reuse_df, weight_by='count')
     
     # 2. Distribution analysis
-    print("\n2. Distribution Plots...")
-    create_distribution_plots(reuse_df)
+    #print("\n2. Distribution Plots...")
+    #create_distribution_plots(reuse_df)
     
     # 3. Timeline analysis
-    print("\n3. Timeline Analysis...")
-    create_timeline_analysis(reuse_df)
+    #print("\n3. Timeline Analysis...")
+    #create_timeline_analysis(reuse_df)
     
     # 4. Page-level heatmaps
     print("\n" + "="*80)
