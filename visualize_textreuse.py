@@ -549,7 +549,7 @@ def main():
     print("="*80)
     
     create_top_pages_heatmap(reuse_df, top_n=50)  # Top 50 pages
-    # create_page_level_heatmap(reuse_df)  # Uncomment for full heatmap (may be very large)
+    create_page_level_heatmap(reuse_df)  # Uncomment for full heatmap (may be very large)
     
     # 5. Temporal visualization
     print("\n5. Temporal Visualization...")
