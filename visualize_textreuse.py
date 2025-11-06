@@ -460,21 +460,28 @@ def create_temporal_visualization(reuse_df):
     
     print(f"Valid dates range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
     
-    # Use correct column names: source_page_id and target_page_id
+    # Merge source page info
     reuse_with_dates = reuse_df.merge(
         metadata[['page_id', 'issue_date', 'publication_name']], 
-        left_on='source_page_id',  # UPDATED
+        left_on='source_page_id',
         right_on='page_id',
         how='left'
-    ).rename(columns={'issue_date': 'source_date', 'publication_name': 'source_pub'})
+    ).drop(columns=['page_id']).rename(columns={
+        'issue_date': 'source_date', 
+        'publication_name': 'source_pub'
+    })
     
+    # Merge target page info
     reuse_with_dates = reuse_with_dates.merge(
         metadata[['page_id', 'issue_date', 'publication_name']], 
-        left_on='target_page_id',  # UPDATED
+        left_on='target_page_id',
         right_on='page_id',
         how='left',
         suffixes=('', '_target')
-    ).rename(columns={'issue_date': 'target_date', 'publication_name': 'target_pub'})
+    ).drop(columns=['page_id']).rename(columns={
+        'issue_date': 'target_date', 
+        'publication_name': 'target_pub'
+    })
     
     # Filter out rows with missing dates
     reuse_with_dates = reuse_with_dates[
@@ -518,7 +525,6 @@ def create_temporal_visualization(reuse_df):
     plt.savefig('temporal_flow.png', dpi=300, bbox_inches='tight')
     print("✅ Saved: temporal_flow.png")
     plt.close()
-
 def main():
     # Load data
     print("Loading text reuse data...")
