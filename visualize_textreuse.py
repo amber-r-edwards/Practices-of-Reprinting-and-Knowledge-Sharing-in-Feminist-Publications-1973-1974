@@ -213,30 +213,59 @@ def create_page_level_heatmap(reuse_df):
     # Load metadata to get page information
     metadata = pd.read_csv('page_metadata.csv')
     
+    # Check what columns we have in reuse_df
+    if 'page1' in reuse_df.columns and 'page2' in reuse_df.columns:
+        source_col = 'page1'
+        target_col = 'page2'
+    elif 'page_id1' in reuse_df.columns and 'page_id2' in reuse_df.columns:
+        source_col = 'page_id1'
+        target_col = 'page_id2'
+    else:
+        print(f"Available columns: {reuse_df.columns.tolist()}")
+        raise ValueError("Could not find page identifier columns")
+    
+    print(f"Using columns: {source_col} and {target_col}")
+    
     # Merge to get source and target page information
     reuse_with_pages = reuse_df.merge(
         metadata[['page_id', 'publication_name', 'filename']], 
-        left_on='source_page', 
+        left_on=source_col, 
         right_on='page_id',
         how='left'
-    ).rename(columns={'publication_name': 'source_pub', 'filename': 'source_file'})
+    ).drop(columns=['page_id']).rename(columns={
+        'publication_name': 'source_pub', 
+        'filename': 'source_file'
+    })
     
     reuse_with_pages = reuse_with_pages.merge(
         metadata[['page_id', 'publication_name', 'filename']], 
-        left_on='target_page', 
+        left_on=target_col, 
         right_on='page_id',
         how='left'
-    ).rename(columns={'publication_name': 'target_pub', 'filename': 'target_file'})
+    ).drop(columns=['page_id']).rename(columns={
+        'publication_name': 'target_pub', 
+        'filename': 'target_file'
+    })
     
     # Create page labels (publication/filename)
-    reuse_with_pages['source_label'] = reuse_with_pages['source_pub'] + '/' + reuse_with_pages['source_file'].apply(lambda x: x.split('/')[-1] if isinstance(x, str) else 'unknown')
-    reuse_with_pages['target_label'] = reuse_with_pages['target_pub'] + '/' + reuse_with_pages['target_file'].apply(lambda x: x.split('/')[-1] if isinstance(x, str) else 'unknown')
+    reuse_with_pages['source_label'] = reuse_with_pages['source_pub'] + '/' + reuse_with_pages['source_file'].apply(
+        lambda x: x.split('/')[-1].replace('.txt', '') if isinstance(x, str) else 'unknown'
+    )
+    reuse_with_pages['target_label'] = reuse_with_pages['target_pub'] + '/' + reuse_with_pages['target_file'].apply(
+        lambda x: x.split('/')[-1].replace('.txt', '') if isinstance(x, str) else 'unknown'
+    )
     
     # Create adjacency matrix
     page_pairs = reuse_with_pages.groupby(['source_label', 'target_label']).size().reset_index(name='count')
     
     # Get all unique pages
     all_pages = sorted(set(page_pairs['source_label'].unique()) | set(page_pairs['target_label'].unique()))
+    
+    print(f"Total unique pages: {len(all_pages)}")
+    
+    if len(all_pages) > 200:
+        print(f"⚠️  Warning: {len(all_pages)} pages will create a very large heatmap")
+        print("Consider using create_top_pages_heatmap() instead")
     
     # Create matrix
     matrix = pd.DataFrame(0, index=all_pages, columns=all_pages)
@@ -289,22 +318,42 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
     # Load metadata
     metadata = pd.read_csv('page_metadata.csv')
     
-    # Merge page information
+    # The reuse_df should have page1 and page2 columns that match page_id in metadata
+    # Check what columns we actually have
+    if 'page1' in reuse_df.columns and 'page2' in reuse_df.columns:
+        source_col = 'page1'
+        target_col = 'page2'
+    elif 'page_id1' in reuse_df.columns and 'page_id2' in reuse_df.columns:
+        source_col = 'page_id1'
+        target_col = 'page_id2'
+    else:
+        print(f"Available columns: {reuse_df.columns.tolist()}")
+        raise ValueError("Could not find page identifier columns")
+    
+    print(f"Using columns: {source_col} and {target_col}")
+    
+    # Merge page information using page_id
     reuse_with_pages = reuse_df.merge(
         metadata[['page_id', 'publication_name', 'filename']], 
-        left_on='source_page', 
+        left_on=source_col, 
         right_on='page_id',
         how='left'
-    ).rename(columns={'publication_name': 'source_pub', 'filename': 'source_file'})
+    ).drop(columns=['page_id']).rename(columns={
+        'publication_name': 'source_pub', 
+        'filename': 'source_file'
+    })
     
     reuse_with_pages = reuse_with_pages.merge(
         metadata[['page_id', 'publication_name', 'filename']], 
-        left_on='target_page', 
+        left_on=target_col, 
         right_on='page_id',
         how='left'
-    ).rename(columns={'publication_name': 'target_pub', 'filename': 'target_file'})
+    ).drop(columns=['page_id']).rename(columns={
+        'publication_name': 'target_pub', 
+        'filename': 'target_file'
+    })
     
-    # Create simplified labels
+    # Create simplified labels (just filename without path)
     reuse_with_pages['source_label'] = reuse_with_pages['source_file'].apply(
         lambda x: x.split('/')[-1].replace('.txt', '') if isinstance(x, str) else 'unknown'
     )
@@ -329,6 +378,10 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
         reuse_with_pages['source_label'].isin(top_pages) & 
         reuse_with_pages['target_label'].isin(top_pages)
     ].copy()
+    
+    if len(filtered) == 0:
+        print("⚠️  No data to plot after filtering")
+        return
     
     # Create matrix
     page_pairs = filtered.groupby(['source_label', 'target_label']).size().reset_index(name='count')
