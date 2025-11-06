@@ -55,7 +55,7 @@ metadata['text_clean'] = metadata['text'].apply(preprocess_text)
 # Calculate text length for later use
 metadata['text_length'] = metadata['text_clean'].apply(len)
 
-def find_text_matches(text1, text2, min_words=8, similarity_threshold=0.85):
+def find_text_matches(text1, text2, min_words=8, similarity_threshold=0.70):
     """
     Find matching passages between two texts using sequence matching
     
@@ -108,7 +108,7 @@ def find_text_matches(text1, text2, min_words=8, similarity_threshold=0.85):
     return matches
 
 # Alternative: Character-based matching for shorter passages
-def find_text_matches_chars(text1, text2, min_chars=100, similarity_threshold=0.85):
+def find_text_matches_chars(text1, text2, min_chars=100, similarity_threshold=0.70):
     """
     Character-based matching - useful for shorter passages or poetry
     """
@@ -141,7 +141,7 @@ def find_text_matches_chars(text1, text2, min_chars=100, similarity_threshold=0.
     
     return matches
 
-def compare_all_pages(metadata, min_words=8, similarity_threshold=0.85, 
+def compare_all_pages(metadata, min_words=8, similarity_threshold=0.70, 
                       same_pub=False, max_time_gap_days=None):
     """
     Compare all pairs of pages and find text reuse
@@ -220,7 +220,7 @@ print("Starting text reuse detection...")
 reuse_results = compare_all_pages(
     metadata, 
     min_words=8,
-    similarity_threshold=0.85,
+    similarity_threshold=0.70,
     same_pub=False  # Only cross-publication for now
 )
 
