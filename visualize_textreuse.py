@@ -1,7 +1,7 @@
-import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd # type: ignore
+import networkx as nx # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+import seaborn as sns # type: ignore
 from collections import defaultdict
 import numpy as np
 
@@ -213,16 +213,9 @@ def create_page_level_heatmap(reuse_df):
     # Load metadata to get page information
     metadata = pd.read_csv('page_metadata.csv')
     
-    # Check what columns we have in reuse_df
-    if 'page1' in reuse_df.columns and 'page2' in reuse_df.columns:
-        source_col = 'page1'
-        target_col = 'page2'
-    elif 'page_id1' in reuse_df.columns and 'page_id2' in reuse_df.columns:
-        source_col = 'page_id1'
-        target_col = 'page_id2'
-    else:
-        print(f"Available columns: {reuse_df.columns.tolist()}")
-        raise ValueError("Could not find page identifier columns")
+    # Use the correct column names
+    source_col = 'source_page_id'
+    target_col = 'target_page_id'
     
     print(f"Using columns: {source_col} and {target_col}")
     
@@ -246,6 +239,7 @@ def create_page_level_heatmap(reuse_df):
         'publication_name': 'target_pub', 
         'filename': 'target_file'
     })
+
     
     # Create page labels (publication/filename)
     reuse_with_pages['source_label'] = reuse_with_pages['source_pub'] + '/' + reuse_with_pages['source_file'].apply(
@@ -318,17 +312,9 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
     # Load metadata
     metadata = pd.read_csv('page_metadata.csv')
     
-    # The reuse_df should have page1 and page2 columns that match page_id in metadata
-    # Check what columns we actually have
-    if 'page1' in reuse_df.columns and 'page2' in reuse_df.columns:
-        source_col = 'page1'
-        target_col = 'page2'
-    elif 'page_id1' in reuse_df.columns and 'page_id2' in reuse_df.columns:
-        source_col = 'page_id1'
-        target_col = 'page_id2'
-    else:
-        print(f"Available columns: {reuse_df.columns.tolist()}")
-        raise ValueError("Could not find page identifier columns")
+    # Use the correct column names
+    source_col = 'source_page_id'
+    target_col = 'target_page_id'
     
     print(f"Using columns: {source_col} and {target_col}")
     
@@ -412,135 +398,172 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
     plt.savefig(f'top_{top_n}_pages_heatmap.png', dpi=300, bbox_inches='tight')
     print(f"✅ Saved: top_{top_n}_pages_heatmap.png")
     plt.close()
-
-def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
-    """
-    Show text reuse over time
-    """
-    # Ensure dates are datetime
-    reuse_df['source_date'] = pd.to_datetime(reuse_df['source_date'])
-    reuse_df['target_date'] = pd.to_datetime(reuse_df['target_date'])
     
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
+    print(f"\nTop {top_n} most connected pages:")
+    for i, page in enumerate(top_pages[:10], 1):
+        print(f"  {i}. {page}: {int(total_counts[page])} connections")
     
-    # Plot 1: Timeline of reuse instances
-    for _, row in reuse_df.iterrows():
-        ax1.plot([row['source_date'], row['target_date']], [0, 1], 
-                alpha=0.3, color='steelblue')
-        ax1.scatter([row['source_date']], [0], alpha=0.6, s=50, color='green')
-        ax1.scatter([row['target_date']], [1], alpha=0.6, s=50, color='red')
+    # Filter data to top pages
+    filtered = reuse_with_pages[
+        reuse_with_pages['source_label'].isin(top_pages) & 
+        reuse_with_pages['target_label'].isin(top_pages)
+    ].copy()
     
-    ax1.set_yticks([0, 1])
-    ax1.set_yticklabels(['Source', 'Target'])
-    ax1.set_title('Text Reuse Flow Over Time', fontsize=14, fontweight='bold')
-    ax1.set_xlabel('Date', fontsize=12)
-    ax1.grid(True, alpha=0.3)
+    if len(filtered) == 0:
+        print("⚠️  No data to plot after filtering")
+        return
     
-    # Plot 2: Frequency over time
-    reuse_df['month'] = reuse_df['target_date'].dt.to_period('M')
-    monthly_counts = reuse_df.groupby('month').size()
+    # Create matrix
+    page_pairs = filtered.groupby(['source_label', 'target_label']).size().reset_index(name='count')
+    matrix = pd.DataFrame(0, index=top_pages, columns=top_pages)
     
-    ax2.bar(range(len(monthly_counts)), monthly_counts.values, 
-           color='steelblue', alpha=0.7)
-    ax2.set_xticks(range(len(monthly_counts)))
-    ax2.set_xticklabels([str(m) for m in monthly_counts.index], rotation=45)
-    ax2.set_title('Text Reuse Instances Per Month', fontsize=14, fontweight='bold')
-    ax2.set_xlabel('Month', fontsize=12)
-    ax2.set_ylabel('Number of Instances', fontsize=12)
-    ax2.grid(True, alpha=0.3, axis='y')
+    for _, row in page_pairs.iterrows():
+        matrix.loc[row['source_label'], row['target_label']] = row['count']
+        matrix.loc[row['target_label'], row['source_label']] = row['count']
     
+    # Visualize
+    fig, ax = plt.subplots(figsize=(16, 14))
+    
+    sns.heatmap(matrix, 
+                cmap='YlOrRd',
+                cbar_kws={'label': 'Match Count'},
+                square=True,
+                annot=False,
+                fmt='g',
+                ax=ax)
+    
+    plt.title(f'Top {top_n} Most Connected Pages - Text Reuse Heatmap', fontsize=14, pad=20)
+    plt.xlabel('Target Page', fontsize=10)
+    plt.ylabel('Source Page', fontsize=10)
+    plt.xticks(rotation=90, fontsize=7)
+    plt.yticks(rotation=0, fontsize=7)
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"Saved temporal visualization to {output_file}")
+    
+    plt.savefig(f'top_{top_n}_pages_heatmap.png', dpi=300, bbox_inches='tight')
+    print(f"✅ Saved: top_{top_n}_pages_heatmap.png")
     plt.close()
 
-def generate_network_statistics(G, pub_connections):
-    """
-    Calculate and print network statistics
-    """
-    print("\n" + "="*60)
-    print("NETWORK STATISTICS")
-    print("="*60)
+def create_temporal_visualization(reuse_df):
+    """Create temporal flow visualization showing when text moves between publications"""
+    # Load metadata for dates
+    metadata = pd.read_csv('page_metadata.csv')
+    metadata['issue_date'] = pd.to_datetime(metadata['issue_date'], errors='coerce')
     
-    print(f"\nNodes (Publications): {G.number_of_nodes()}")
-    print(f"Edges (Connections): {G.number_of_edges()}")
-    print(f"Network Density: {nx.density(G):.3f}")
+    # Filter out invalid dates
+    metadata = metadata[metadata['issue_date'].notna()].copy()
     
-    print("\n--- Degree Centrality (Most Connected Publications) ---")
-    degree_cent = nx.degree_centrality(G)
-    for pub, cent in sorted(degree_cent.items(), key=lambda x: x[1], reverse=True):
-        print(f"{pub}: {cent:.3f}")
+    # Filter out dates outside reasonable range (1970-1980)
+    metadata = metadata[
+        (metadata['issue_date'].dt.year >= 1970) & 
+        (metadata['issue_date'].dt.year <= 1980)
+    ].copy()
     
-    print("\n--- In-Degree (Publications Receiving Most Content) ---")
-    in_degree = dict(G.in_degree())
-    for pub, deg in sorted(in_degree.items(), key=lambda x: x[1], reverse=True):
-        print(f"{pub}: {deg} incoming connections")
+    print(f"Valid dates range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
     
-    print("\n--- Out-Degree (Publications Sharing Most Content) ---")
-    out_degree = dict(G.out_degree())
-    for pub, deg in sorted(out_degree.items(), key=lambda x: x[1], reverse=True):
-        print(f"{pub}: {deg} outgoing connections")
+    # Use correct column names: source_page_id and target_page_id
+    reuse_with_dates = reuse_df.merge(
+        metadata[['page_id', 'issue_date', 'publication_name']], 
+        left_on='source_page_id',  # UPDATED
+        right_on='page_id',
+        how='left'
+    ).rename(columns={'issue_date': 'source_date', 'publication_name': 'source_pub'})
     
-    print("\n--- Strongest Connections (by number of matches) ---")
-    top_connections = pub_connections.nlargest(10, 'count')
-    for _, row in top_connections.iterrows():
-        print(f"{row['source']} → {row['target']}: {row['count']} matches "
-              f"({row['total_words']} total words)")
+    reuse_with_dates = reuse_with_dates.merge(
+        metadata[['page_id', 'issue_date', 'publication_name']], 
+        left_on='target_page_id',  # UPDATED
+        right_on='page_id',
+        how='left',
+        suffixes=('', '_target')
+    ).rename(columns={'issue_date': 'target_date', 'publication_name': 'target_pub'})
     
-    # Check for reciprocity
-    if nx.is_directed(G):
-        print(f"\nReciprocity: {nx.reciprocity(G):.3f}")
-        print("(Proportion of bidirectional connections)")
+    # Filter out rows with missing dates
+    reuse_with_dates = reuse_with_dates[
+        reuse_with_dates['source_date'].notna() & 
+        reuse_with_dates['target_date'].notna()
+    ].copy()
+    
+    print(f"Matches with valid dates: {len(reuse_with_dates)}")
+    
+    if len(reuse_with_dates) == 0:
+        print("⚠️  No matches with valid dates found")
+        return
+    
+    # Create visualization
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
+    
+    # Plot 1: Temporal flow lines
+    for _, row in reuse_with_dates.iterrows():
+        ax1.plot([row['source_date'], row['target_date']], [0, 1],
+                alpha=0.3, color='steelblue')
+    
+    ax1.set_ylabel('Source → Target')
+    ax1.set_title('Temporal Flow of Text Reuse')
+    ax1.set_yticks([0, 1])
+    ax1.set_yticklabels(['Source', 'Target'])
+    
+    # Plot 2: Timeline of matches
+    reuse_with_dates['time_diff'] = (
+        reuse_with_dates['target_date'] - reuse_with_dates['source_date']
+    ).dt.days
+    
+    ax2.scatter(reuse_with_dates['source_date'], 
+               reuse_with_dates['time_diff'],
+               alpha=0.5, s=50)
+    ax2.axhline(y=0, color='r', linestyle='--', alpha=0.3)
+    ax2.set_xlabel('Source Date')
+    ax2.set_ylabel('Days Between Source and Target')
+    ax2.set_title('Time Lag Between Text Reuse Instances')
+    
+    plt.tight_layout()
+    plt.savefig('temporal_flow.png', dpi=300, bbox_inches='tight')
+    print("✅ Saved: temporal_flow.png")
+    plt.close()
 
 def main():
-    """
-    Main execution function
-    """
-    print("Starting Text Reuse Network Visualization\n")
-    
     # Load data
     print("Loading text reuse data...")
     reuse_df = load_filtered_reuse_data()
     
-    if len(reuse_df) == 0:
-        print("No data to visualize!")
-        return
-    
-    # 2. Create publication-level network
-    print("\nCreating publication-level network...")
-    G_pub, pub_connections = create_publication_network(reuse_df, weight_by='count')
-    
-    # 3. Generate statistics
-    generate_network_statistics(G_pub, pub_connections)
-    
-    # 4. Visualize publication network
-    print("\nGenerating visualizations...")
-    visualize_publication_network(G_pub)
-    
-    # 5. Page-level heatmaps
+    # Create all visualizations
     print("\n" + "="*80)
-    print("Creating page-level heatmaps...")
+    print("Creating visualizations...")
+    print("="*80)
+    
+    # 1. Publication-level network
+    print("\n1. Publication Network...")
+    create_publication_network(reuse_df, weight_by='count')
+    
+    # 2. Distribution analysis
+    print("\n2. Distribution Plots...")
+    create_distribution_plots(reuse_df)
+    
+    # 3. Timeline analysis
+    print("\n3. Timeline Analysis...")
+    create_timeline_analysis(reuse_df)
+    
+    # 4. Page-level heatmaps
+    print("\n" + "="*80)
+    print("4. Creating page-level heatmaps...")
     print("="*80)
     
     create_top_pages_heatmap(reuse_df, top_n=50)  # Top 50 pages
     # create_page_level_heatmap(reuse_df)  # Uncomment for full heatmap (may be very large)
-   
     
-    # 6. Temporal visualization
+    # 5. Temporal visualization
+    print("\n5. Temporal Visualization...")
     create_temporal_visualization(reuse_df)
     
-    # 7. Page-level network (if you want it)
-    # Uncomment if you have metadata loaded and want page-level viz
-    # metadata = pd.read_csv('metadata.csv')
-    # G_pages = create_page_network(reuse_data, metadata, min_connections=1)
-    # visualize_page_network(G_pages)
-    
-    print("\n" + "="*60)
-    print("Visualization complete! Check output files:")
-    print("  - network_publications.png")
-    print("  - heatmap_connections.png")
-    print("  - temporal_reuse.png")
-    print("="*60)
+    print("\n" + "="*80)
+    print("✅ All visualizations complete!")
+    print("="*80)
+    print("\nGenerated files:")
+    print("  - publication_network_count.png")
+    print("  - distribution_plots.png")
+    print("  - timeline_analysis.png")
+    print("  - top_50_pages_heatmap.png")
+    print("  - temporal_flow.png")
+    print("="*80)
+
 
 if __name__ == "__main__":
     main()
