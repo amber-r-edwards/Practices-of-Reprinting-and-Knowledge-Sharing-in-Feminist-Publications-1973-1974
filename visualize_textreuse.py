@@ -445,39 +445,16 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
 
 def create_temporal_visualization(reuse_df):
     """Create temporal flow visualization showing when text moves between publications"""
-    # Load metadata for dates
-    metadata = pd.read_csv('page_metadata.csv')
     
-    # Parse dates with explicit format MM/DD/YYYY
-    metadata['issue_date'] = pd.to_datetime(metadata['issue_date'], format='%m/%d/%Y', errors='coerce')
+    # Parse dates from the results CSV
+    reuse_df['source_date'] = pd.to_datetime(reuse_df['source_date'], format='%m/%d/%Y', errors='coerce')
+    reuse_df['target_date'] = pd.to_datetime(reuse_df['target_date'], format='%m/%d/%Y', errors='coerce')
     
-    # Filter out invalid dates
-    metadata = metadata[metadata['issue_date'].notna()].copy()
-    
-    if len(metadata) == 0:
-        print("⚠️  No valid dates found in metadata.")
-        return
-    
-    print(f"Total valid dates: {len(metadata)}")
-    print(f"Date range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
-    
-    # Merge with source pages
-    reuse_with_dates = reuse_df.merge(
-        metadata[['page_id', 'issue_date', 'publication_name']], 
-        left_on='source_page_id',
-        right_on='page_id',
-        how='left',
-        suffixes=('', '_source')
-    )
-    
-    # Merge with target pages
-    reuse_with_dates = reuse_with_dates.merge(
-        metadata[['page_id', 'issue_date', 'publication_name']], 
-        left_on='target_page_id',
-        right_on='page_id',
-        how='left',
-        suffixes=('_source', '_target')
-    )
+    # Filter out rows with missing dates
+    reuse_with_dates = reuse_df[
+        reuse_df['source_date'].notna() & 
+        reuse_df['target_date'].notna()
+    ].copy()
     
     print(f"Matches with valid dates: {len(reuse_with_dates)}")
     
@@ -485,36 +462,46 @@ def create_temporal_visualization(reuse_df):
         print("⚠️  No matches with valid dates found")
         return
     
+    print(f"Date range: {reuse_with_dates['source_date'].min()} to {reuse_with_dates['target_date'].max()}")
+    
     # Create visualization
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
     
-    # Plot 1: Temporal flow lines
+    # Plot 1: Temporal flow lines from source to target
     for _, row in reuse_with_dates.iterrows():
-        ax1.plot([row['issue_date_source'], row['issue_date_target']], [0, 1],
+        ax1.plot([row['source_date'], row['target_date']], [0, 1],
                 alpha=0.3, color='steelblue')
     
     ax1.set_ylabel('Source → Target')
     ax1.set_title('Temporal Flow of Text Reuse')
     ax1.set_yticks([0, 1])
     ax1.set_yticklabels(['Source', 'Target'])
+    ax1.grid(True, alpha=0.3)
     
-    # Plot 2: Timeline of matches
-    reuse_with_dates['time_diff'] = (
-        reuse_with_dates['issue_date_target'] - reuse_with_dates['issue_date_source']
-    ).dt.days
-    
-    ax2.scatter(reuse_with_dates['issue_date_source'], 
-               reuse_with_dates['time_diff'],
-               alpha=0.5, s=50)
-    ax2.axhline(y=0, color='r', linestyle='--', alpha=0.3)
+    # Plot 2: Time lag distribution
+    ax2.scatter(reuse_with_dates['source_date'], 
+               reuse_with_dates['time_lag_days'],
+               alpha=0.5, s=50, c=reuse_with_dates['time_lag_days'], 
+               cmap='coolwarm')
+    ax2.axhline(y=0, color='r', linestyle='--', alpha=0.3, label='Same date')
     ax2.set_xlabel('Source Date')
     ax2.set_ylabel('Days Between Source and Target')
     ax2.set_title('Time Lag Between Text Reuse Instances')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig('temporal_flow.png', dpi=300, bbox_inches='tight')
     print("✅ Saved: temporal_flow.png")
     plt.close()
+    
+    # Print summary statistics
+    print(f"\nTemporal Analysis Summary:")
+    print(f"  Mean time lag: {reuse_with_dates['time_lag_days'].mean():.1f} days")
+    print(f"  Median time lag: {reuse_with_dates['time_lag_days'].median():.1f} days")
+    print(f"  Min time lag: {reuse_with_dates['time_lag_days'].min()} days")
+    print(f"  Max time lag: {reuse_with_dates['time_lag_days'].max()} days")
+    print(f"  Same-day reuse: {(reuse_with_dates['time_lag_days'] == 0).sum()} instances")
 
 def main():
     # Load data
