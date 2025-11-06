@@ -205,42 +205,159 @@ def visualize_page_network(G, output_file='network_pages.png',
     print(f"Saved page network to {output_file}")
     plt.close()
 
-def create_connection_matrix(reuse_df):
+def create_page_level_heatmap(reuse_df):
     """
-    Create a heatmap showing connection strength between publications
+    Create heatmap showing text reuse at the page level
+    Shows which specific pages share text with other pages
     """
-    # Aggregate by publication pair
-    matrix_data = reuse_df.groupby(
-        ['source_publication', 'target_publication']
-    ).size().reset_index(name='count')
+    # Load metadata to get page information
+    metadata = pd.read_csv('page_metadata.csv')
     
-    # Pivot to matrix
-    matrix = matrix_data.pivot(
-        index='source_publication',
-        columns='target_publication',
-        values='count'
-    ).fillna(0)
+    # Merge to get source and target page information
+    reuse_with_pages = reuse_df.merge(
+        metadata[['page_id', 'publication_name', 'filename']], 
+        left_on='source_page', 
+        right_on='page_id',
+        how='left'
+    ).rename(columns={'publication_name': 'source_pub', 'filename': 'source_file'})
     
-    return matrix
-
-def visualize_connection_matrix(matrix, output_file='heatmap_connections.png'):
-    """
-    Visualize connection matrix as heatmap
-    """
-    fig, ax = plt.subplots(figsize=(10, 8))
+    reuse_with_pages = reuse_with_pages.merge(
+        metadata[['page_id', 'publication_name', 'filename']], 
+        left_on='target_page', 
+        right_on='page_id',
+        how='left'
+    ).rename(columns={'publication_name': 'target_pub', 'filename': 'target_file'})
     
-    sns.heatmap(matrix, annot=True, fmt='.0f', cmap='YlOrRd', 
-                cbar_kws={'label': 'Number of Text Reuse Instances'},
-                linewidths=0.5, ax=ax)
+    # Create page labels (publication/filename)
+    reuse_with_pages['source_label'] = reuse_with_pages['source_pub'] + '/' + reuse_with_pages['source_file'].apply(lambda x: x.split('/')[-1] if isinstance(x, str) else 'unknown')
+    reuse_with_pages['target_label'] = reuse_with_pages['target_pub'] + '/' + reuse_with_pages['target_file'].apply(lambda x: x.split('/')[-1] if isinstance(x, str) else 'unknown')
     
-    ax.set_title('Text Reuse Connections Between Publications', 
-                fontsize=14, fontweight='bold', pad=20)
-    ax.set_xlabel('Target Publication', fontsize=12)
-    ax.set_ylabel('Source Publication', fontsize=12)
+    # Create adjacency matrix
+    page_pairs = reuse_with_pages.groupby(['source_label', 'target_label']).size().reset_index(name='count')
     
+    # Get all unique pages
+    all_pages = sorted(set(page_pairs['source_label'].unique()) | set(page_pairs['target_label'].unique()))
+    
+    # Create matrix
+    matrix = pd.DataFrame(0, index=all_pages, columns=all_pages)
+    
+    for _, row in page_pairs.iterrows():
+        matrix.loc[row['source_label'], row['target_label']] = row['count']
+        matrix.loc[row['target_label'], row['source_label']] = row['count']  # Make symmetric
+    
+    # Create visualization
+    fig, ax = plt.subplots(figsize=(20, 20))
+    
+    # Use log scale for better visualization if there's high variance
+    plot_data = np.log1p(matrix)  # log(1 + x) to handle zeros
+    
+    sns.heatmap(plot_data, 
+                cmap='YlOrRd',
+                cbar_kws={'label': 'Log(1 + Match Count)'},
+                square=True,
+                ax=ax)
+    
+    plt.title('Page-Level Text Reuse Heatmap', fontsize=16, pad=20)
+    plt.xlabel('Target Page', fontsize=12)
+    plt.ylabel('Source Page', fontsize=12)
+    plt.xticks(rotation=90, fontsize=6)
+    plt.yticks(rotation=0, fontsize=6)
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"Saved connection matrix to {output_file}")
+    
+    plt.savefig('page_level_heatmap.png', dpi=300, bbox_inches='tight')
+    print("✅ Saved: page_level_heatmap.png")
+    plt.close()
+    
+    # Also create a simplified version grouped by publication
+    print("\nCreating summary by publication...")
+    
+    # Extract publication from label
+    reuse_with_pages['source_pub_only'] = reuse_with_pages['source_label'].apply(lambda x: x.split('/')[0])
+    reuse_with_pages['target_pub_only'] = reuse_with_pages['target_label'].apply(lambda x: x.split('/')[0])
+    
+    pub_summary = reuse_with_pages.groupby(['source_pub_only', 'target_pub_only']).size().reset_index(name='total_matches')
+    
+    print("\nTotal matches between publications:")
+    print(pub_summary.pivot(index='source_pub_only', columns='target_pub_only', values='total_matches').fillna(0))
+
+
+def create_top_pages_heatmap(reuse_df, top_n=50):
+    """
+    Create heatmap for only the top N most connected pages
+    More readable than full page-level heatmap
+    """
+    # Load metadata
+    metadata = pd.read_csv('page_metadata.csv')
+    
+    # Merge page information
+    reuse_with_pages = reuse_df.merge(
+        metadata[['page_id', 'publication_name', 'filename']], 
+        left_on='source_page', 
+        right_on='page_id',
+        how='left'
+    ).rename(columns={'publication_name': 'source_pub', 'filename': 'source_file'})
+    
+    reuse_with_pages = reuse_with_pages.merge(
+        metadata[['page_id', 'publication_name', 'filename']], 
+        left_on='target_page', 
+        right_on='page_id',
+        how='left'
+    ).rename(columns={'publication_name': 'target_pub', 'filename': 'target_file'})
+    
+    # Create simplified labels
+    reuse_with_pages['source_label'] = reuse_with_pages['source_file'].apply(
+        lambda x: x.split('/')[-1].replace('.txt', '') if isinstance(x, str) else 'unknown'
+    )
+    reuse_with_pages['target_label'] = reuse_with_pages['target_file'].apply(
+        lambda x: x.split('/')[-1].replace('.txt', '') if isinstance(x, str) else 'unknown'
+    )
+    
+    # Count connections per page
+    source_counts = reuse_with_pages['source_label'].value_counts()
+    target_counts = reuse_with_pages['target_label'].value_counts()
+    total_counts = (source_counts + target_counts).fillna(0).sort_values(ascending=False)
+    
+    # Get top N pages
+    top_pages = total_counts.head(top_n).index.tolist()
+    
+    print(f"\nTop {top_n} most connected pages:")
+    for i, page in enumerate(top_pages[:10], 1):
+        print(f"  {i}. {page}: {int(total_counts[page])} connections")
+    
+    # Filter data to top pages
+    filtered = reuse_with_pages[
+        reuse_with_pages['source_label'].isin(top_pages) & 
+        reuse_with_pages['target_label'].isin(top_pages)
+    ].copy()
+    
+    # Create matrix
+    page_pairs = filtered.groupby(['source_label', 'target_label']).size().reset_index(name='count')
+    matrix = pd.DataFrame(0, index=top_pages, columns=top_pages)
+    
+    for _, row in page_pairs.iterrows():
+        matrix.loc[row['source_label'], row['target_label']] = row['count']
+        matrix.loc[row['target_label'], row['source_label']] = row['count']
+    
+    # Visualize
+    fig, ax = plt.subplots(figsize=(16, 14))
+    
+    sns.heatmap(matrix, 
+                cmap='YlOrRd',
+                cbar_kws={'label': 'Match Count'},
+                square=True,
+                annot=False,
+                fmt='g',
+                ax=ax)
+    
+    plt.title(f'Top {top_n} Most Connected Pages - Text Reuse Heatmap', fontsize=14, pad=20)
+    plt.xlabel('Target Page', fontsize=10)
+    plt.ylabel('Source Page', fontsize=10)
+    plt.xticks(rotation=90, fontsize=7)
+    plt.yticks(rotation=0, fontsize=7)
+    plt.tight_layout()
+    
+    plt.savefig(f'top_{top_n}_pages_heatmap.png', dpi=300, bbox_inches='tight')
+    print(f"✅ Saved: top_{top_n}_pages_heatmap.png")
     plt.close()
 
 def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
@@ -328,16 +445,17 @@ def main():
     """
     print("Starting Text Reuse Network Visualization\n")
     
-    # 1. Load data
-    reuse_data = load_filtered_reuse_data('text_reuse_results.csv')
+    # Load data
+    print("Loading text reuse data...")
+    reuse_df = load_filtered_reuse_data()
     
-    if len(reuse_data) == 0:
+    if len(reuse_df) == 0:
         print("No data to visualize!")
         return
     
     # 2. Create publication-level network
     print("\nCreating publication-level network...")
-    G_pub, pub_connections = create_publication_network(reuse_data, weight_by='count')
+    G_pub, pub_connections = create_publication_network(reuse_df, weight_by='count')
     
     # 3. Generate statistics
     generate_network_statistics(G_pub, pub_connections)
@@ -346,12 +464,17 @@ def main():
     print("\nGenerating visualizations...")
     visualize_publication_network(G_pub)
     
-    # 5. Create and visualize connection matrix
-    matrix = create_connection_matrix(reuse_data)
-    visualize_connection_matrix(matrix)
+    # 5. Page-level heatmaps
+    print("\n" + "="*80)
+    print("Creating page-level heatmaps...")
+    print("="*80)
+    
+    create_top_pages_heatmap(reuse_df, top_n=50)  # Top 50 pages
+    # create_page_level_heatmap(reuse_df)  # Uncomment for full heatmap (may be very large)
+   
     
     # 6. Temporal visualization
-    create_temporal_visualization(reuse_data)
+    create_temporal_visualization(reuse_df)
     
     # 7. Page-level network (if you want it)
     # Uncomment if you have metadata loaded and want page-level viz
