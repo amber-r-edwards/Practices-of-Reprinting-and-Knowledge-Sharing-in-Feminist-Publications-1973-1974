@@ -448,43 +448,73 @@ def create_temporal_visualization(reuse_df):
     # Load metadata for dates
     metadata = pd.read_csv('page_metadata.csv')
     
-    # Debug: Check what the dates look like
-    print("\nDEBUG: Sample issue_date values:")
-    print(metadata['issue_date'].head(20))
-    print(f"\nUnique date values: {metadata['issue_date'].nunique()}")
-    print(f"Empty/null dates: {metadata['issue_date'].isna().sum()}")
-    print(f"Sample non-null dates: {metadata['issue_date'].dropna().head(10).tolist()}")
-    
-    # Try to parse dates with explicit format if possible
-    # Common formats: "January 1973", "1973-01-15", "1/15/1973"
-    metadata['issue_date'] = pd.to_datetime(metadata['issue_date'], errors='coerce')
-    
-    print(f"\nAfter parsing:")
-    print(f"Valid dates: {metadata['issue_date'].notna().sum()}")
-    print(f"Invalid dates: {metadata['issue_date'].isna().sum()}")
+    # Parse dates with explicit format MM/DD/YYYY
+    metadata['issue_date'] = pd.to_datetime(metadata['issue_date'], format='%m/%d/%Y', errors='coerce')
     
     # Filter out invalid dates
     metadata = metadata[metadata['issue_date'].notna()].copy()
     
     if len(metadata) == 0:
-        print("⚠️  No valid dates found in metadata. Check your page_metadata.csv issue_date column.")
+        print("⚠️  No valid dates found in metadata.")
         return
     
-    print(f"Date range before filtering: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
+    print(f"Total valid dates: {len(metadata)}")
+    print(f"Date range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
     
-    # Filter out dates outside reasonable range (1970-1980)
-    metadata = metadata[
-        (metadata['issue_date'].dt.year >= 1970) & 
-        (metadata['issue_date'].dt.year <= 1980)
-    ].copy()
+    # Merge with source pages
+    reuse_with_dates = reuse_df.merge(
+        metadata[['page_id', 'issue_date', 'publication_name']], 
+        left_on='source_page_id',
+        right_on='page_id',
+        how='left',
+        suffixes=('', '_source')
+    )
     
-    if len(metadata) == 0:
-        print("⚠️  No dates found in 1970-1980 range.")
+    # Merge with target pages
+    reuse_with_dates = reuse_with_dates.merge(
+        metadata[['page_id', 'issue_date', 'publication_name']], 
+        left_on='target_page_id',
+        right_on='page_id',
+        how='left',
+        suffixes=('_source', '_target')
+    )
+    
+    print(f"Matches with valid dates: {len(reuse_with_dates)}")
+    
+    if len(reuse_with_dates) == 0:
+        print("⚠️  No matches with valid dates found")
         return
     
-    print(f"Valid dates in range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
+    # Create visualization
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
     
-    # Rest of function continues...
+    # Plot 1: Temporal flow lines
+    for _, row in reuse_with_dates.iterrows():
+        ax1.plot([row['issue_date_source'], row['issue_date_target']], [0, 1],
+                alpha=0.3, color='steelblue')
+    
+    ax1.set_ylabel('Source → Target')
+    ax1.set_title('Temporal Flow of Text Reuse')
+    ax1.set_yticks([0, 1])
+    ax1.set_yticklabels(['Source', 'Target'])
+    
+    # Plot 2: Timeline of matches
+    reuse_with_dates['time_diff'] = (
+        reuse_with_dates['issue_date_target'] - reuse_with_dates['issue_date_source']
+    ).dt.days
+    
+    ax2.scatter(reuse_with_dates['issue_date_source'], 
+               reuse_with_dates['time_diff'],
+               alpha=0.5, s=50)
+    ax2.axhline(y=0, color='r', linestyle='--', alpha=0.3)
+    ax2.set_xlabel('Source Date')
+    ax2.set_ylabel('Days Between Source and Target')
+    ax2.set_title('Time Lag Between Text Reuse Instances')
+    
+    plt.tight_layout()
+    plt.savefig('temporal_flow.png', dpi=300, bbox_inches='tight')
+    print("✅ Saved: temporal_flow.png")
+    plt.close()
 
 def main():
     # Load data
