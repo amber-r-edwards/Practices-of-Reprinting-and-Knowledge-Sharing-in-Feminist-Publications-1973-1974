@@ -460,33 +460,28 @@ def create_temporal_visualization(reuse_df):
     
     print(f"Valid dates range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
     
-    # Merge source page info
+    # Merge with source pages
     reuse_with_dates = reuse_df.merge(
         metadata[['page_id', 'issue_date', 'publication_name']], 
         left_on='source_page_id',
         right_on='page_id',
-        how='left'
-    ).drop(columns=['page_id']).rename(columns={
-        'issue_date': 'source_date', 
-        'publication_name': 'source_pub'
-    })
+        how='left',
+        suffixes=('', '_source')
+    )
     
-    # Merge target page info
+    # Merge with target pages
     reuse_with_dates = reuse_with_dates.merge(
         metadata[['page_id', 'issue_date', 'publication_name']], 
         left_on='target_page_id',
         right_on='page_id',
         how='left',
-        suffixes=('', '_target')
-    ).drop(columns=['page_id']).rename(columns={
-        'issue_date': 'target_date', 
-        'publication_name': 'target_pub'
-    })
+        suffixes=('_source', '_target')
+    )
     
     # Filter out rows with missing dates
     reuse_with_dates = reuse_with_dates[
-        reuse_with_dates['source_date'].notna() & 
-        reuse_with_dates['target_date'].notna()
+        reuse_with_dates['issue_date_source'].notna() & 
+        reuse_with_dates['issue_date_target'].notna()
     ].copy()
     
     print(f"Matches with valid dates: {len(reuse_with_dates)}")
@@ -500,7 +495,7 @@ def create_temporal_visualization(reuse_df):
     
     # Plot 1: Temporal flow lines
     for _, row in reuse_with_dates.iterrows():
-        ax1.plot([row['source_date'], row['target_date']], [0, 1],
+        ax1.plot([row['issue_date_source'], row['issue_date_target']], [0, 1],
                 alpha=0.3, color='steelblue')
     
     ax1.set_ylabel('Source → Target')
@@ -510,10 +505,10 @@ def create_temporal_visualization(reuse_df):
     
     # Plot 2: Timeline of matches
     reuse_with_dates['time_diff'] = (
-        reuse_with_dates['target_date'] - reuse_with_dates['source_date']
+        reuse_with_dates['issue_date_target'] - reuse_with_dates['issue_date_source']
     ).dt.days
     
-    ax2.scatter(reuse_with_dates['source_date'], 
+    ax2.scatter(reuse_with_dates['issue_date_source'], 
                reuse_with_dates['time_diff'],
                alpha=0.5, s=50)
     ax2.axhline(y=0, color='r', linestyle='--', alpha=0.3)
@@ -525,6 +520,7 @@ def create_temporal_visualization(reuse_df):
     plt.savefig('temporal_flow.png', dpi=300, bbox_inches='tight')
     print("✅ Saved: temporal_flow.png")
     plt.close()
+
 def main():
     # Load data
     print("Loading text reuse data...")
