@@ -1,3 +1,9 @@
 - ocr_processing - turns PDFs to images, transcribes images using Tessaract and AI correction, compiles pages back into one txt file
     - files - Ain't I A Woman, Big Mamma Rag, Do it NOW, and Gold Flower - issues all from 1973-1974
-- (need to decide what method/methods to use from here)
+- created CSV metadata file with information for each page and a page_id for referencing
+- text reuse to track direct sharing between the publications
+    - minimum match length settled on 6 words, similarity threshold of .65 - allows for small variations
+    - output of pairs of matching text segments with the source/target pages identified via page_id that references back to the metadata CSV file
+        - categorized by match type (not working the way expected - woudl be more effective at a much larger scale i think)
+        - identifies directionality and time lag between publications
+- visualizations of text reuse: heat map (at page and pub level) - **may omit** , network analysis (needs tweaking - at pub level currently), and temporal visualization (not working) - **may omit**
