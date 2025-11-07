@@ -1,16 +1,16 @@
 """
 Semantic Similarity Visualization Script
 Works from all_page_similarities.csv with citation filtering
-Generates publication-level heatmap and clustering visualizations
+Generates PAGE-LEVEL heatmap and clustering visualizations
 """
 
-import pandas as pd # type: ignore # type: ignore
+import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt # type: ignore
-import seaborn as sns # type: ignore
+import matplotlib.pyplot as plt
+import seaborn as sns
 from pathlib import Path
-from scipy.cluster import hierarchy # type: ignore
-from scipy.spatial.distance import squareform # type: ignore
+from scipy.cluster import hierarchy
+from scipy.spatial.distance import squareform
 
 # Set style
 plt.style.use('seaborn-v0_8-darkgrid')
@@ -60,307 +60,341 @@ def load_filtered_similarity_data(filepath='semantic_results/all_page_similariti
     
     return filtered
 
-def aggregate_to_publication_level(similarity_df):
+def create_similarity_matrix_from_pairs(similarity_df):
     """
-    Aggregate page-level similarities to publication-level
-    Returns publication × publication similarity matrix
+    Convert pairwise similarity dataframe to full similarity matrix
+    Returns matrix and list of page_ids in order
     """
-    print("\nAggregating to publication level...")
+    print("\nCreating full similarity matrix from pairs...")
     
-    publications = sorted(pd.concat([
-        similarity_df['pub1'], 
-        similarity_df['pub2']
-    ]).unique())
+    # Get all unique page IDs
+    all_pages = sorted(set(similarity_df['page1_id'].unique()) | 
+                      set(similarity_df['page2_id'].unique()))
+    n_pages = len(all_pages)
     
-    n_pubs = len(publications)
-    print(f"Publications: {n_pubs}")
+    print(f"Total pages: {n_pages}")
     
-    # Initialize publication similarity matrix
-    pub_similarity = np.zeros((n_pubs, n_pubs))
-    pub_counts = np.zeros((n_pubs, n_pubs))
+    # Create page_id to index mapping
+    page_to_idx = {page: i for i, page in enumerate(all_pages)}
     
-    # Create publication index mapping
-    pub_to_idx = {pub: i for i, pub in enumerate(publications)}
+    # Initialize similarity matrix (with 1s on diagonal)
+    similarity_matrix = np.eye(n_pages)
     
-    # Aggregate similarities
+    # Fill in the similarity values
     for _, row in similarity_df.iterrows():
-        i = pub_to_idx[row['pub1']]
-        j = pub_to_idx[row['pub2']]
+        i = page_to_idx[row['page1_id']]
+        j = page_to_idx[row['page2_id']]
+        sim = row['similarity']
         
-        # Add to both directions (symmetric matrix)
-        pub_similarity[i, j] += row['similarity']
-        pub_similarity[j, i] += row['similarity']
-        pub_counts[i, j] += 1
-        pub_counts[j, i] += 1
+        # Fill both directions (symmetric)
+        similarity_matrix[i, j] = sim
+        similarity_matrix[j, i] = sim
     
-    # Average the similarities
-    with np.errstate(divide='ignore', invalid='ignore'):
-        pub_similarity = np.where(pub_counts > 0, pub_similarity / pub_counts, 0)
+    print(f"Similarity matrix shape: {similarity_matrix.shape}")
     
-    # Handle within-publication (diagonal)
-    # Get within-publication similarities
-    within_pub_sim = similarity_df[similarity_df['same_publication'] == True]
-    for pub in publications:
-        pub_data = within_pub_sim[within_pub_sim['pub1'] == pub]
-        if len(pub_data) > 0:
-            idx = pub_to_idx[pub]
-            pub_similarity[idx, idx] = pub_data['similarity'].mean()
-    
-    # Create DataFrame
-    pub_sim_df = pd.DataFrame(
-        pub_similarity,
-        index=publications,
-        columns=publications
-    )
-    
-    # Print statistics
-    print("\nPublication-level statistics:")
-    for pub in publications:
-        n_pages = similarity_df[
-            (similarity_df['pub1'] == pub) | (similarity_df['pub2'] == pub)
-        ]['page1_id'].nunique()
-        print(f"  {pub}: avg similarity = {pub_sim_df.loc[pub, pub]:.3f}")
-    
-    return pub_sim_df
+    return similarity_matrix, all_pages
 
-def create_publication_heatmap(pub_sim_df, output_file='publication_similarity_heatmap.png'):
+def get_page_metadata(similarity_df):
     """
-    Create publication-level similarity heatmap
+    Extract page metadata from similarity dataframe
+    Returns DataFrame with page_id and publication_name
     """
-    print("\nCreating publication similarity heatmap...")
+    # Get unique page info from both columns
+    pages1 = similarity_df[['page1_id', 'pub1']].rename(
+        columns={'page1_id': 'page_id', 'pub1': 'publication_name'}
+    ).drop_duplicates()
     
-    fig, ax = plt.subplots(figsize=(12, 10))
+    pages2 = similarity_df[['page2_id', 'pub2']].rename(
+        columns={'page2_id': 'page_id', 'pub2': 'publication_name'}
+    ).drop_duplicates()
+    
+    page_metadata = pd.concat([pages1, pages2]).drop_duplicates('page_id')
+    page_metadata = page_metadata.sort_values('page_id').reset_index(drop=True)
+    
+    print(f"\nPage metadata: {len(page_metadata)} pages from {page_metadata['publication_name'].nunique()} publications")
+    
+    return page_metadata
+
+def create_page_level_heatmap(similarity_matrix, all_pages, page_metadata, 
+                              output_file='page_similarity_heatmap.png',
+                              max_pages=100):
+    """
+    Create page-level similarity heatmap
+    If too many pages, show top N most connected pages
+    """
+    print(f"\nCreating page-level heatmap...")
+    
+    n_pages = len(all_pages)
+    
+    if n_pages > max_pages:
+        print(f"Too many pages ({n_pages}). Showing top {max_pages} most connected pages...")
+        
+        # Calculate average similarity for each page (excluding self)
+        avg_similarity = np.mean(similarity_matrix, axis=1) - (1.0 / n_pages)  # Subtract diagonal contribution
+        
+        # Get top N pages
+        top_indices = np.argsort(avg_similarity)[-max_pages:][::-1]
+        
+        # Extract submatrix
+        plot_matrix = similarity_matrix[np.ix_(top_indices, top_indices)]
+        plot_pages = [all_pages[i] for i in top_indices]
+        
+        # Get publication info for coloring
+        page_pubs = []
+        for page_id in plot_pages:
+            pub = page_metadata[page_metadata['page_id'] == page_id]['publication_name'].iloc[0]
+            page_pubs.append(pub)
+    else:
+        plot_matrix = similarity_matrix
+        plot_pages = all_pages
+        page_pubs = [page_metadata[page_metadata['page_id'] == page_id]['publication_name'].iloc[0] 
+                    for page_id in plot_pages]
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(16, 14))
     
     # Create heatmap
     sns.heatmap(
-        pub_sim_df,
-        annot=True,
-        fmt='.3f',
+        plot_matrix,
         cmap='YlOrRd',
-        vmin=0.4,  # Adjust based on your data
-        vmax=0.8,
-        cbar_kws={'label': 'Average Semantic Similarity'},
-        linewidths=0.5,
+        vmin=0.3,
+        vmax=0.9,
+        cbar_kws={'label': 'Semantic Similarity'},
         square=True,
-        ax=ax
+        linewidths=0,
+        ax=ax,
+        xticklabels=False,
+        yticklabels=False
     )
     
-    ax.set_title('Semantic Similarity Between Publications\n(Higher = More Ideologically Aligned)',
-                fontsize=16, fontweight='bold', pad=20)
-    ax.set_xlabel('Publication', fontsize=13)
-    ax.set_ylabel('Publication', fontsize=13)
+    title = f'Page-Level Semantic Similarity Heatmap'
+    if n_pages > max_pages:
+        title += f'\n(Top {max_pages} most connected pages of {n_pages} total)'
+    ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
     
-    # Rotate labels for readability
-    plt.xticks(rotation=45, ha='right', fontsize=11)
-    plt.yticks(rotation=0, fontsize=11)
+    # Add publication color bar on the side
+    publications = sorted(page_metadata['publication_name'].unique())
+    pub_colors = plt.cm.tab10(np.linspace(0, 1, len(publications)))
+    pub_to_color = {pub: pub_colors[i] for i, pub in enumerate(publications)}
     
-    plt.tight_layout()
+    # Create color bars for publications
+    colors = [pub_to_color[pub] for pub in page_pubs]
+    
+    # Add colored bars on left and top
+    ax_left = fig.add_axes([0.08, 0.125, 0.01, 0.755])
+    ax_left.imshow(np.array(colors).reshape(-1, 1), aspect='auto', interpolation='nearest')
+    ax_left.set_xticks([])
+    ax_left.set_yticks([])
+    
+    ax_top = fig.add_axes([0.125, 0.89, 0.755, 0.01])
+    ax_top.imshow(np.array(colors).reshape(1, -1), aspect='auto', interpolation='nearest')
+    ax_top.set_xticks([])
+    ax_top.set_yticks([])
+    
+    # Add legend for publications
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor=pub_to_color[pub], label=pub) 
+                      for pub in publications]
+    fig.legend(handles=legend_elements, loc='upper left', 
+              bbox_to_anchor=(0.01, 0.99), fontsize=10)
+    
     plt.savefig(OUTPUT_DIR / output_file, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved heatmap to: {OUTPUT_DIR / output_file}")
+    print(f"✓ Saved page-level heatmap to: {OUTPUT_DIR / output_file}")
     plt.close()
 
-def create_clustered_heatmap(pub_sim_df, output_file='publication_clustered_heatmap.png'):
+def create_clustered_page_heatmap(similarity_matrix, all_pages, page_metadata,
+                                  output_file='page_clustered_heatmap.png',
+                                  max_pages=100):
     """
-    Create hierarchically clustered heatmap showing publication relationships
+    Create hierarchically clustered page-level heatmap
     """
-    print("\nCreating clustered heatmap...")
+    print(f"\nCreating clustered page-level heatmap...")
     
-    # Convert similarity to distance for clustering
-    # Distance = 1 - similarity
-    distance_matrix = 1 - pub_sim_df.values
+    n_pages = len(all_pages)
     
-    # Ensure symmetric and non-negative
+    if n_pages > max_pages:
+        print(f"Too many pages ({n_pages}). Showing top {max_pages} most connected pages...")
+        avg_similarity = np.mean(similarity_matrix, axis=1) - (1.0 / n_pages)
+        top_indices = np.argsort(avg_similarity)[-max_pages:][::-1]
+        plot_matrix = similarity_matrix[np.ix_(top_indices, top_indices)]
+        plot_pages = [all_pages[i] for i in top_indices]
+    else:
+        plot_matrix = similarity_matrix
+        plot_pages = all_pages
+    
+    # Convert similarity to distance
+    distance_matrix = 1 - plot_matrix
     distance_matrix = np.maximum(distance_matrix, 0)
     distance_matrix = (distance_matrix + distance_matrix.T) / 2
     
-    # Convert to condensed distance matrix for scipy
-    condensed_dist = squareform(distance_matrix, checks=False)
-    
     # Perform hierarchical clustering
+    condensed_dist = squareform(distance_matrix, checks=False)
     linkage = hierarchy.linkage(condensed_dist, method='average')
     
-    # Create figure with dendrogram
-    fig = plt.figure(figsize=(14, 12))
-    
-    # Create gridspec for layout
-    gs = fig.add_gridspec(2, 2, width_ratios=[1, 4], height_ratios=[1, 4],
-                          hspace=0.05, wspace=0.05)
-    
-    # Top dendrogram
-    ax_top = fig.add_subplot(gs[0, 1])
-    dendro_top = hierarchy.dendrogram(
-        linkage,
-        ax=ax_top,
-        orientation='top',
-        labels=pub_sim_df.columns,
-        no_labels=True,
-        color_threshold=0,
-        above_threshold_color='gray'
-    )
-    ax_top.axis('off')
-    
-    # Left dendrogram
-    ax_left = fig.add_subplot(gs[1, 0])
-    dendro_left = hierarchy.dendrogram(
-        linkage,
-        ax=ax_left,
-        orientation='left',
-        labels=pub_sim_df.index,
-        no_labels=True,
-        color_threshold=0,
-        above_threshold_color='gray'
-    )
-    ax_left.axis('off')
-    
-    # Reorder matrix based on clustering
-    order = dendro_top['leaves']
-    ordered_matrix = pub_sim_df.iloc[order, order]
-    
-    # Main heatmap
-    ax_heatmap = fig.add_subplot(gs[1, 1])
-    sns.heatmap(
-        ordered_matrix,
-        annot=True,
-        fmt='.3f',
+    # Create clustered heatmap
+    g = sns.clustermap(
+        plot_matrix,
+        row_linkage=linkage,
+        col_linkage=linkage,
         cmap='YlOrRd',
-        vmin=0.4,
-        vmax=0.8,
+        vmin=0.3,
+        vmax=0.9,
+        figsize=(16, 14),
         cbar_kws={'label': 'Semantic Similarity'},
-        linewidths=0.5,
-        square=True,
-        ax=ax_heatmap
+        xticklabels=False,
+        yticklabels=False,
+        linewidths=0
     )
     
-    ax_heatmap.set_xlabel('Publication', fontsize=12)
-    ax_heatmap.set_ylabel('Publication', fontsize=12)
-    plt.setp(ax_heatmap.xaxis.get_majorticklabels(), rotation=45, ha='right')
-    
-    # Overall title
-    fig.suptitle('Hierarchically Clustered Publication Similarity\n(Publications grouped by ideological alignment)',
-                 fontsize=16, fontweight='bold', y=0.98)
+    title = f'Hierarchically Clustered Page-Level Similarity'
+    if n_pages > max_pages:
+        title += f'\n(Top {max_pages} of {n_pages} pages, grouped by similarity)'
+    g.fig.suptitle(title, fontsize=16, fontweight='bold', y=0.98)
     
     plt.savefig(OUTPUT_DIR / output_file, dpi=300, bbox_inches='tight')
     print(f"✓ Saved clustered heatmap to: {OUTPUT_DIR / output_file}")
     plt.close()
 
-def create_network_clustering(pub_sim_df, output_file='publication_network_clusters.png',
-                              threshold=0.5):
+def create_page_network(similarity_df, page_metadata,
+                       output_file='page_network_clusters.png',
+                       threshold=0.6,
+                       max_nodes=50):
     """
-    Create network visualization with publications as nodes
+    Create network visualization at page level
     Show only strong connections (above threshold)
     """
-    print(f"\nCreating network clustering (threshold={threshold})...")
+    print(f"\nCreating page-level network (threshold={threshold})...")
     
     try:
-        import networkx as nx # type: ignore
+        import networkx as nx
     except ImportError:
         print("NetworkX not installed. Skipping network visualization.")
+        return
+    
+    # Filter to high similarity pairs
+    high_sim = similarity_df[similarity_df['similarity'] >= threshold].copy()
+    
+    print(f"  Page pairs above threshold: {len(high_sim)}")
+    
+    if len(high_sim) == 0:
+        print(f"  No pairs above threshold {threshold}. Lowering to 0.5...")
+        threshold = 0.5
+        high_sim = similarity_df[similarity_df['similarity'] >= threshold].copy()
+    
+    if len(high_sim) == 0:
+        print("  Still no pairs. Cannot create network.")
         return
     
     # Create graph
     G = nx.Graph()
     
-    # Add nodes
-    publications = pub_sim_df.index.tolist()
-    G.add_nodes_from(publications)
+    # Add edges
+    for _, row in high_sim.iterrows():
+        G.add_edge(row['page1_id'], row['page2_id'], 
+                  weight=row['similarity'],
+                  pub1=row['pub1'],
+                  pub2=row['pub2'])
     
-    # Add edges for similarities above threshold
-    edges_added = 0
-    for i, pub1 in enumerate(publications):
-        for j, pub2 in enumerate(publications):
-            if i < j:  # Avoid duplicates
-                similarity = pub_sim_df.iloc[i, j]
-                if similarity >= threshold:
-                    G.add_edge(pub1, pub2, weight=similarity)
-                    edges_added += 1
+    print(f"  Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
     
-    print(f"  Added {edges_added} edges above threshold {threshold}")
-    
-    if edges_added == 0:
-        print(f"  No edges above threshold {threshold}. Lowering threshold to 0.4...")
-        threshold = 0.4
-        for i, pub1 in enumerate(publications):
-            for j, pub2 in enumerate(publications):
-                if i < j:
-                    similarity = pub_sim_df.iloc[i, j]
-                    if similarity >= threshold:
-                        G.add_edge(pub1, pub2, weight=similarity)
-                        edges_added += 1
-    
-    if edges_added == 0:
-        print("  Still no edges. All publications may be very dissimilar.")
-        # Add all edges for visualization
-        for i, pub1 in enumerate(publications):
-            for j, pub2 in enumerate(publications):
-                if i < j:
-                    similarity = pub_sim_df.iloc[i, j]
-                    G.add_edge(pub1, pub2, weight=similarity)
+    # If too many nodes, keep only most connected
+    if G.number_of_nodes() > max_nodes:
+        print(f"  Too many nodes. Keeping top {max_nodes} most connected...")
+        degrees = dict(G.degree())
+        top_nodes = sorted(degrees.items(), key=lambda x: x[1], reverse=True)[:max_nodes]
+        top_node_ids = [node for node, _ in top_nodes]
+        G = G.subgraph(top_node_ids).copy()
+        print(f"  Filtered graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
     
     # Create visualization
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(18, 14))
     
     # Layout
-    pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
+    pos = nx.spring_layout(G, k=1.5, iterations=50, seed=42)
     
-    # Node sizes based on average similarity to all others
-    node_sizes = []
-    for pub in publications:
-        avg_sim = pub_sim_df.loc[pub].mean()
-        node_sizes.append(avg_sim * 5000)
+    # Get publication for each node
+    node_pubs = {}
+    for node in G.nodes():
+        pub = page_metadata[page_metadata['page_id'] == node]['publication_name'].iloc[0]
+        node_pubs[node] = pub
+    
+    # Color by publication
+    publications = sorted(page_metadata['publication_name'].unique())
+    pub_colors = plt.cm.tab10(np.linspace(0, 1, len(publications)))
+    pub_to_color = {pub: pub_colors[i] for i, pub in enumerate(publications)}
+    
+    node_colors = [pub_to_color[node_pubs[node]] for node in G.nodes()]
+    
+    # Node sizes based on degree
+    node_sizes = [G.degree(node) * 100 + 50 for node in G.nodes()]
     
     # Edge widths based on similarity
     edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
     if edge_weights:
         max_weight = max(edge_weights)
         min_weight = min(edge_weights)
-        edge_widths = [5 * (w - min_weight) / (max_weight - min_weight + 0.01) + 1 
+        edge_widths = [3 * (w - min_weight) / (max_weight - min_weight + 0.01) + 0.5 
                       for w in edge_weights]
     else:
-        edge_widths = [2] * len(G.edges())
+        edge_widths = [1] * len(G.edges())
     
     # Draw network
     nx.draw_networkx_nodes(
         G, pos,
         node_size=node_sizes,
-        node_color='lightblue',
-        alpha=0.9,
+        node_color=node_colors,
+        alpha=0.8,
         edgecolors='black',
-        linewidths=2,
+        linewidths=1,
         ax=ax
     )
     
     nx.draw_networkx_edges(
         G, pos,
         width=edge_widths,
-        alpha=0.5,
+        alpha=0.4,
         edge_color='gray',
         ax=ax
     )
     
+    # Only label highly connected nodes
+    high_degree_nodes = {node: f"P{node}" for node in G.nodes() if G.degree(node) > 3}
     nx.draw_networkx_labels(
         G, pos,
-        font_size=11,
+        labels=high_degree_nodes,
+        font_size=7,
         font_weight='bold',
-        font_color='black',
         ax=ax
     )
     
-    ax.set_title(f'Publication Network Based on Semantic Similarity\n(Connections show similarity ≥ {threshold:.2f})',
-                fontsize=16, fontweight='bold', pad=20)
-    ax.axis('off')
-    ax.margins(0.15)
-    
     # Add legend
-    legend_text = f"Node size = avg similarity to all publications\nEdge width = pairwise similarity\nShowing edges ≥ {threshold:.2f}"
-    ax.text(0.02, 0.98, legend_text,
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor=pub_to_color[pub], label=pub) 
+                      for pub in publications]
+    ax.legend(handles=legend_elements, loc='upper left', fontsize=10,
+             title='Publications')
+    
+    title = f'Page-Level Network Based on Semantic Similarity\n(Connections show similarity ≥ {threshold:.2f}'
+    if G.number_of_nodes() < len(page_metadata):
+        title += f', showing top {G.number_of_nodes()} most connected pages)'
+    else:
+        title += ')'
+    
+    ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
+    ax.axis('off')
+    ax.margins(0.1)
+    
+    # Add info text
+    info_text = f"Node size = number of connections\nEdge width = similarity strength\nNode color = publication"
+    ax.text(0.02, 0.02, info_text,
            transform=ax.transAxes,
            fontsize=10,
-           verticalalignment='top',
+           verticalalignment='bottom',
            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / output_file, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved network clustering to: {OUTPUT_DIR / output_file}")
+    print(f"✓ Saved page network to: {OUTPUT_DIR / output_file}")
     plt.close()
 
 def create_within_vs_cross_comparison(similarity_df, output_file='within_vs_cross_comparison.png'):
@@ -380,7 +414,7 @@ def create_within_vs_cross_comparison(similarity_df, output_file='within_vs_cros
     ax1.hist(cross, bins=30, alpha=0.7, label='Cross-publication', color='coral', edgecolor='black')
     ax1.set_xlabel('Semantic Similarity', fontsize=12)
     ax1.set_ylabel('Frequency', fontsize=12)
-    ax1.set_title('Distribution of Similarity Scores', fontsize=14, fontweight='bold')
+    ax1.set_title('Distribution of Page-Level Similarity Scores', fontsize=14, fontweight='bold')
     ax1.legend(fontsize=11)
     ax1.grid(True, alpha=0.3)
     
@@ -396,7 +430,7 @@ def create_within_vs_cross_comparison(similarity_df, output_file='within_vs_cros
         patch.set_alpha(0.7)
     
     ax2.set_ylabel('Semantic Similarity', fontsize=12)
-    ax2.set_title('Similarity Score Comparison', fontsize=14, fontweight='bold')
+    ax2.set_title('Page-Level Similarity Comparison', fontsize=14, fontweight='bold')
     ax2.grid(True, alpha=0.3, axis='y')
     
     # Add statistics text
@@ -413,16 +447,17 @@ def create_within_vs_cross_comparison(similarity_df, output_file='within_vs_cros
     print(f"✓ Saved comparison plot to: {OUTPUT_DIR / output_file}")
     plt.close()
 
-def generate_summary_statistics(similarity_df, pub_sim_df):
+def generate_summary_statistics(similarity_df, page_metadata):
     """
     Generate and print summary statistics
     """
     print("\n" + "="*60)
-    print("SUMMARY STATISTICS")
+    print("SUMMARY STATISTICS (PAGE LEVEL)")
     print("="*60)
     
     # Overall statistics
     print("\nOverall:")
+    print(f"  Total pages: {len(page_metadata)}")
     print(f"  Total page pairs analyzed: {len(similarity_df):,}")
     print(f"  Average similarity: {similarity_df['similarity'].mean():.3f}")
     print(f"  Similarity range: [{similarity_df['similarity'].min():.3f}, {similarity_df['similarity'].max():.3f}]")
@@ -431,41 +466,47 @@ def generate_summary_statistics(similarity_df, pub_sim_df):
     within = similarity_df[similarity_df['same_publication'] == True]
     cross = similarity_df[similarity_df['same_publication'] == False]
     
-    print("\nWithin-publication:")
+    print("\nWithin-publication (pages from same pub):")
     print(f"  Pairs: {len(within):,}")
     print(f"  Average similarity: {within['similarity'].mean():.3f}")
     print(f"  Std dev: {within['similarity'].std():.3f}")
     
-    print("\nCross-publication:")
+    print("\nCross-publication (pages from different pubs):")
     print(f"  Pairs: {len(cross):,}")
     print(f"  Average similarity: {cross['similarity'].mean():.3f}")
     print(f"  Std dev: {cross['similarity'].std():.3f}")
     
     print(f"\nDifference (within - cross): {within['similarity'].mean() - cross['similarity'].mean():.3f}")
     
-    # Publication-level statistics
+    # Per-publication statistics
     print("\n" + "="*60)
-    print("PUBLICATION-LEVEL STATISTICS")
+    print("PER-PUBLICATION STATISTICS")
     print("="*60)
     
-    print("\nInternal coherence (diagonal values):")
-    for pub in pub_sim_df.index:
-        print(f"  {pub}: {pub_sim_df.loc[pub, pub]:.3f}")
-    
-    print("\nTop 5 cross-publication similarities:")
-    # Get upper triangle (excluding diagonal)
-    mask = np.triu(np.ones_like(pub_sim_df), k=1).astype(bool)
-    upper_tri = pub_sim_df.where(mask)
-    stacked = upper_tri.stack().sort_values(ascending=False)
-    for (pub1, pub2), sim in stacked.head(5).items():
-        print(f"  {pub1} ↔ {pub2}: {sim:.3f}")
+    for pub in sorted(page_metadata['publication_name'].unique()):
+        pub_pages = page_metadata[page_metadata['publication_name'] == pub]['page_id']
+        n_pages = len(pub_pages)
+        
+        # Get within-pub similarities for this publication
+        pub_within = within[within['pub1'] == pub]
+        
+        if len(pub_within) > 0:
+            avg_sim = pub_within['similarity'].mean()
+            print(f"\n{pub}:")
+            print(f"  Pages: {n_pages}")
+            print(f"  Avg internal similarity: {avg_sim:.3f}")
+            print(f"  Internal comparisons: {len(pub_within)}")
+        else:
+            print(f"\n{pub}:")
+            print(f"  Pages: {n_pages}")
+            print(f"  (Only 1 page, no internal comparisons)")
 
 def main():
     """
     Main execution function
     """
     print("="*60)
-    print("SEMANTIC SIMILARITY VISUALIZATION")
+    print("SEMANTIC SIMILARITY VISUALIZATION (PAGE LEVEL)")
     print("Working from all_page_similarities.csv")
     print("="*60)
     
@@ -478,31 +519,36 @@ def main():
         print("ERROR: No data remaining after filtering!")
         return
     
-    # 2. Aggregate to publication level
-    print("\nSTEP 2: Aggregating to publication level")
+    # 2. Get page metadata
+    print("\nSTEP 2: Extracting page metadata")
     print("-" * 60)
-    pub_sim_df = aggregate_to_publication_level(similarity_df)
+    page_metadata = get_page_metadata(similarity_df)
     
-    # 3. Create visualizations
-    print("\nSTEP 3: Creating visualizations")
+    # 3. Create full similarity matrix
+    print("\nSTEP 3: Creating similarity matrix")
+    print("-" * 60)
+    similarity_matrix, all_pages = create_similarity_matrix_from_pairs(similarity_df)
+    
+    # 4. Create visualizations
+    print("\nSTEP 4: Creating visualizations")
     print("-" * 60)
     
-    # Basic heatmap
-    create_publication_heatmap(pub_sim_df)
+    # Page-level heatmap
+    create_page_level_heatmap(similarity_matrix, all_pages, page_metadata, max_pages=100)
     
     # Clustered heatmap
-    create_clustered_heatmap(pub_sim_df)
+    create_clustered_page_heatmap(similarity_matrix, all_pages, page_metadata, max_pages=100)
     
     # Network clustering
-    create_network_clustering(pub_sim_df, threshold=0.5)
+    create_page_network(similarity_df, page_metadata, threshold=0.6, max_nodes=50)
     
     # Within vs cross comparison
     create_within_vs_cross_comparison(similarity_df)
     
-    # 4. Generate summary statistics
-    print("\nSTEP 4: Generating summary statistics")
+    # 5. Generate summary statistics
+    print("\nSTEP 5: Generating summary statistics")
     print("-" * 60)
-    generate_summary_statistics(similarity_df, pub_sim_df)
+    generate_summary_statistics(similarity_df, page_metadata)
     
     # Final summary
     print("\n" + "="*60)
@@ -511,9 +557,9 @@ def main():
     print(f"\nAll outputs saved to: {OUTPUT_DIR}/")
     print("\nGenerated files:")
     print("  - page_similarities_no_citations.csv      (Filtered data)")
-    print("  - publication_similarity_heatmap.png      (Basic heatmap)")
-    print("  - publication_clustered_heatmap.png       (Hierarchical clustering)")
-    print("  - publication_network_clusters.png        (Network visualization)")
+    print("  - page_similarity_heatmap.png             (Page-level heatmap)")
+    print("  - page_clustered_heatmap.png              (Hierarchical clustering)")
+    print("  - page_network_clusters.png               (Network visualization)")
     print("  - within_vs_cross_comparison.png          (Distribution comparison)")
     print("\n" + "="*60)
 
