@@ -1,9 +1,11 @@
 - ocr_processing - turns PDFs to images, transcribes images using Tessaract and AI correction, compiles pages back into one txt file
     - files - Ain't I A Woman, Big Mamma Rag, Do it NOW, and Gold Flower - issues all from 1973-1974
 - created CSV metadata file with information for each page and a page_id for referencing
-- text reuse to track direct sharing between the publications
+- text reuse to track direct sharing between the publications - written to produce small scale exploration of reprinting across zines that could be duplicated at a much larger scale (with more effective results)
     - minimum match length settled on 6 words, similarity threshold of .65 - allows for small variations
     - output of pairs of matching text segments with the source/target pages identified via page_id that references back to the metadata CSV file
         - categorized by match type (not working the way expected - woudl be more effective at a much larger scale i think)
         - identifies directionality and time lag between publications
-- visualizations of text reuse: heat map (at page and pub level) - **may omit** , network analysis (needs tweaking - at pub level currently), and temporal visualization (not working) - **may omit**
+- visualizations of text reuse: heat map (at page and pub level) , network analysis (at page and pub level), and temporal visualization of reuse
+- semantic similarity - attempt to track ideological sharing between the publications - ineffective both because of the sace and general content of zines being so variable at the page and publication level, and because it is fairly safe to assume that the ideological similarity of these publications are moderately high (not a very interesting historical quesiton)
+    - left in results just for visibility that the method was attempted - originally intended to be a comparison between the literal and ideological sharing
