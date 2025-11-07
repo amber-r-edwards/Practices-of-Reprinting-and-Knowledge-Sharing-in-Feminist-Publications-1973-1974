@@ -366,54 +366,6 @@ def save_embeddings_and_similarity(embeddings_df, similarity_matrix, pub_sim_df,
     
     return summary
 
-def create_comparison_with_text_reuse(pub_sim_df):
-    """
-    Compare semantic similarity with text reuse results if available
-    """
-    reuse_file = Path('reuse_results/text_reuse_results.csv')
-    
-    if not reuse_file.exists():
-        print("\nText reuse results not found. Skipping comparison.")
-        return
-    
-    print("\nComparing with text reuse results...")
-    
-    # Load text reuse data
-    reuse_df = pd.read_csv(reuse_file)
-    
-    # Aggregate text reuse by publication pair
-    reuse_counts = reuse_df.groupby(['source_publication', 'target_publication']).size().reset_index(name='reuse_count')
-    
-    # Create comparison data
-    comparison = []
-    for _, row in reuse_counts.iterrows():
-        src, tgt = row['source_publication'], row['target_publication']
-        
-        # Get semantic similarity
-        if src in pub_sim_df.index and tgt in pub_sim_df.columns:
-            sem_sim = pub_sim_df.loc[src, tgt]
-            comparison.append({
-                'source': src,
-                'target': tgt,
-                'text_reuse_count': row['reuse_count'],
-                'semantic_similarity': sem_sim
-            })
-    
-    if not comparison:
-        print("No overlapping publication pairs found")
-        return
-    
-    comp_df = pd.DataFrame(comparison)
-    comp_df.to_csv(OUTPUT_DIR / 'reuse_vs_similarity_comparison.csv', index=False)
-    print(f"✓ Saved comparison to: {OUTPUT_DIR / 'reuse_vs_similarity_comparison.csv'}")
-    
-    # Print correlation
-    if len(comp_df) > 2:
-        corr = comp_df['semantic_similarity'].corr(comp_df['text_reuse_count'])
-        print(f"\nCorrelation between semantic similarity and text reuse: {corr:.3f}")
-        print("(Positive = publications that are ideologically aligned also share text)")
-        print("(Near zero = ideological alignment independent of text sharing)")
-
 def main():
     """
     Main execution function - Dual Approach Analysis
@@ -468,12 +420,7 @@ def main():
         embeddings_df, similarity_matrix, pub_sim_df, 
         within_pub_stats, cross_pub_stats
     )
-    
-    # 8. Compare with text reuse results
-    print("\nSTEP 8: Comparing with text reuse results")
-    print("-" * 60)
-    create_comparison_with_text_reuse(pub_sim_df)
-    
+
     # Final summary
     print("\n" + "="*60)
     print("ANALYSIS COMPLETE!")
@@ -494,18 +441,6 @@ def main():
     print("  - page_similarity_matrix.npy            (Full similarity matrix)")
     print("  - summary_stats.json                    (Overall statistics)")
     print("\n" + "="*60)
-    print("INTERPRETATION GUIDE")
-    print("="*60)
-    print("\nHigh within-pub, Low cross-pub:")
-    print("  → Each publication has distinct identity/focus")
-    print("\nLow within-pub, High cross-pub:")
-    print("  → Publications cover diverse topics but share perspectives")
-    print("\nHigh within-pub, High cross-pub:")
-    print("  → Strong ideological cohesion across network")
-    print("\nCompare with text reuse results:")
-    print("  → Do ideologically aligned pubs also share text directly?")
-    print("  → Or do they develop similar views independently?")
-    print("="*60)
 
 if __name__ == "__main__":
     main()
