@@ -447,9 +447,9 @@ def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
     """
     Show text reuse over time
     """
-    # Ensure dates are datetime - specify the format explicitly
-    reuse_df['source_date'] = pd.to_datetime(reuse_df['source_date'], format='%m/%d/%Y', errors='coerce')
-    reuse_df['target_date'] = pd.to_datetime(reuse_df['target_date'], format='%m/%d/%Y', errors='coerce')
+    # Parse dates with correct format (YYYY-MM-DD)
+    reuse_df['source_date'] = pd.to_datetime(reuse_df['source_date'], format='%Y-%m-%d', errors='coerce')
+    reuse_df['target_date'] = pd.to_datetime(reuse_df['target_date'], format='%Y-%m-%d', errors='coerce')
     
     # Check for any invalid dates
     invalid_dates = reuse_df['source_date'].isna().sum() + reuse_df['target_date'].isna().sum()
@@ -495,7 +495,6 @@ def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Saved temporal visualization to {output_file}")
     plt.close()
-
 def main():
     # Load data
     print("Loading text reuse data...")
