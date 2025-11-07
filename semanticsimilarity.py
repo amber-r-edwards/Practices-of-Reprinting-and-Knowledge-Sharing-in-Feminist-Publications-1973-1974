@@ -25,7 +25,7 @@ def load_metadata(filepath='page_metadata.csv'):
     metadata = pd.read_csv(filepath)
     
     # Ensure we have the required columns
-    required_cols = ['page_id', 'publication', 'text']
+    required_cols = ['page_id', 'publication_name', 'text']
     missing = [col for col in required_cols if col not in metadata.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
@@ -40,7 +40,7 @@ def load_metadata(filepath='page_metadata.csv'):
     # Filter out empty pages
     metadata = metadata[metadata['text_clean'].str.len() > 50].copy()
     
-    print(f"Loaded {len(metadata)} pages from {metadata['publication'].nunique()} publications")
+    print(f"Loaded {len(metadata)} pages from {metadata['publication_name'].nunique()} publications")
     return metadata
 
 def generate_page_embeddings(metadata, model_name='all-MiniLM-L6-v2', batch_size=32):
@@ -76,7 +76,7 @@ def generate_page_embeddings(metadata, model_name='all-MiniLM-L6-v2', batch_size
     
     # Merge with metadata to keep publication info
     embeddings_df = embeddings_df.merge(
-        metadata[['page_id', 'publication', 'issue_date']],
+        metadata[['page_id', 'publication_name', 'issue_date']],
         on='page_id',
         how='left'
     )
@@ -94,7 +94,7 @@ def create_publication_similarity_matrix(similarity_matrix, metadata):
     """
     Aggregate page-level similarities to publication-level
     """
-    publications = sorted(metadata['publication'].unique())
+    publications = sorted(metadata['publication_name'].unique())
     n_pubs = len(publications)
     pub_similarity = np.zeros((n_pubs, n_pubs))
     
@@ -103,8 +103,8 @@ def create_publication_similarity_matrix(similarity_matrix, metadata):
     for i, pub1 in enumerate(publications):
         for j, pub2 in enumerate(publications):
             # Get page indices for each publication
-            pages1 = metadata[metadata['publication'] == pub1].index.tolist()
-            pages2 = metadata[metadata['publication'] == pub2].index.tolist()
+            pages1 = metadata[metadata['publication_name'] == pub1].index.tolist()
+            pages2 = metadata[metadata['publication_name'] == pub2].index.tolist()
             
             if i == j:
                 # Within-publication: exclude diagonal (self-similarity)
@@ -288,10 +288,10 @@ def find_most_similar_pages(similarity_matrix, metadata, n_top=20):
         results.append({
             'page1_id': page1['page_id'],
             'page2_id': page2['page_id'],
-            'pub1': page1['publication'],
-            'pub2': page2['publication'],
+            'pub1': page1['publication_name'],
+            'pub2': page2['publication_name'],
             'similarity': similarities[idx],
-            'same_publication': page1['publication'] == page2['publication'],
+            'same_publication': page1['publication_name'] == page2['publication_name'],
             'text1_preview': page1['text_clean'][:100],
             'text2_preview': page2['text_clean'][:100]
         })
@@ -327,8 +327,8 @@ def save_similarity_data(similarity_matrix, metadata, pub_sim_df):
     # Save summary statistics
     summary = {
         'n_pages': len(metadata),
-        'n_publications': metadata['publication'].nunique(),
-        'publications': metadata['publication'].unique().tolist(),
+        'n_publications': metadata['publication_name'].nunique(),
+        'publications': metadata['publication_name'].unique().tolist(),
         'avg_within_pub_similarity': float(np.diag(pub_sim_df).mean()),
         'avg_cross_pub_similarity': float(pub_sim_df.values[~np.eye(len(pub_sim_df), dtype=bool)].mean())
     }
