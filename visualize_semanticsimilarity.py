@@ -139,16 +139,26 @@ def create_page_level_heatmap(similarity_matrix, all_pages, page_metadata,
         plot_matrix = similarity_matrix[np.ix_(top_indices, top_indices)]
         plot_pages = [all_pages[i] for i in top_indices]
         
-        # Get publication info for coloring
-        page_pubs = []
+        # Get issue info for coloring
+        page_issues = []
         for page_id in plot_pages:
-            pub = page_metadata[page_metadata['page_id'] == page_id]['publication_name'].iloc[0]
-            page_pubs.append(pub)
+            page_row = page_metadata[page_metadata['page_id'] == page_id]
+            if not page_row.empty and 'issue_date' in page_row.columns:
+                issue = page_row['issue_date'].iloc[0]
+            else:
+                issue = 'Unknown'
+            page_issues.append(str(issue))
     else:
         plot_matrix = similarity_matrix
         plot_pages = all_pages
-        page_pubs = [page_metadata[page_metadata['page_id'] == page_id]['publication_name'].iloc[0] 
-                    for page_id in plot_pages]
+        page_issues = []
+        for page_id in plot_pages:
+            page_row = page_metadata[page_metadata['page_id'] == page_id]
+            if not page_row.empty and 'issue_date' in page_row.columns:
+                issue = page_row['issue_date'].iloc[0]
+            else:
+                issue = 'Unknown'
+            page_issues.append(str(issue))
     
     # Create figure
     fig, ax = plt.subplots(figsize=(16, 14))
@@ -172,13 +182,13 @@ def create_page_level_heatmap(similarity_matrix, all_pages, page_metadata,
         title += f'\n(Top {max_pages} most connected pages of {n_pages} total)'
     ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
     
-    # Add publication color bar on the side
-    publications = sorted(page_metadata['publication_name'].unique())
-    pub_colors = plt.cm.tab10(np.linspace(0, 1, len(publications)))
-    pub_to_color = {pub: pub_colors[i] for i, pub in enumerate(publications)}
+    # Add issue color bar on the side
+    unique_issues = sorted(set(page_issues))
+    issue_colors = plt.cm.tab20(np.linspace(0, 1, len(unique_issues)))
+    issue_to_color = {issue: issue_colors[i] for i, issue in enumerate(unique_issues)}
     
-    # Create color bars for publications
-    colors = [pub_to_color[pub] for pub in page_pubs]
+    # Create color bars for issues
+    colors = [issue_to_color[issue] for issue in page_issues]
     
     # Add colored bars on left and top
     ax_left = fig.add_axes([0.08, 0.125, 0.01, 0.755])
@@ -191,12 +201,20 @@ def create_page_level_heatmap(similarity_matrix, all_pages, page_metadata,
     ax_top.set_xticks([])
     ax_top.set_yticks([])
     
-    # Add legend for publications
+    # Add legend for issues (limit to avoid overcrowding)
     from matplotlib.patches import Patch
-    legend_elements = [Patch(facecolor=pub_to_color[pub], label=pub) 
-                      for pub in publications]
-    fig.legend(handles=legend_elements, loc='upper left', 
-              bbox_to_anchor=(0.01, 0.99), fontsize=10)
+    if len(unique_issues) <= 15:  # Show all if reasonable number
+        legend_elements = [Patch(facecolor=issue_to_color[issue], label=issue) 
+                          for issue in unique_issues]
+        fig.legend(handles=legend_elements, loc='upper left', 
+                  bbox_to_anchor=(0.01, 0.99), fontsize=8)
+    else:  # Show sample if too many
+        sample_issues = unique_issues[::len(unique_issues)//10]  # Sample every nth issue
+        legend_elements = [Patch(facecolor=issue_to_color[issue], label=issue) 
+                          for issue in sample_issues]
+        fig.legend(handles=legend_elements, loc='upper left', 
+                  bbox_to_anchor=(0.01, 0.99), fontsize=8, 
+                  title=f"Issues (showing {len(sample_issues)} of {len(unique_issues)})")
     
     plt.savefig(OUTPUT_DIR / output_file, dpi=300, bbox_inches='tight')
     print(f"✓ Saved page-level heatmap to: {OUTPUT_DIR / output_file}")
