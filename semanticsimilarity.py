@@ -6,9 +6,9 @@ Analyzes ideological alignment across publications using sentence embeddings
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics.pairwise import cosine_similarity # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+import seaborn as sns # type: ignore
 from pathlib import Path
 import json
 
@@ -430,7 +430,7 @@ def main():
     metadata = load_metadata('page_metadata.csv')
     
     # 2. Generate embeddings
-    embeddings = generate_embeddings(metadata['text_clean'].tolist())
+    embeddings = generate_page_embeddings(metadata['text_clean'].tolist())
     
     # 3. Calculate similarity matrix
     similarity_matrix = calculate_similarity_matrix(embeddings)
