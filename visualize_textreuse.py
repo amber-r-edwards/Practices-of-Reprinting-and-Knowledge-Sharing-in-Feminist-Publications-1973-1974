@@ -145,8 +145,12 @@ def create_page_network(reuse_df, metadata, min_connections=1):
     
     # Add publication attribute to nodes from metadata
     for node in G.nodes():
-        pub = metadata.loc[metadata['page_id'] == node, 'publication'].iloc[0]
-        G.nodes[node]['publication'] = pub
+        try:
+            pub = metadata.loc[metadata['page_id'] == node, 'publication_name'].iloc[0]
+            G.nodes[node]['publication'] = pub
+        except (IndexError, KeyError):
+            # Handle case where page_id is not found in metadata
+            G.nodes[node]['publication'] = f"Unknown_Publication_{node}"
     
     return G
 
