@@ -1,0 +1,9 @@
+source,target,text_reuse_count,semantic_similarity
+AintIAWoman,BigMammaRag,6,0.2406875342130661
+AintIAWoman,DoItNow,3,0.1941697597503662
+BigMammaRag,DoItNow,3,0.20327815413475037
+BigMammaRag,GoldFlower,11,0.2189672887325287
+DoItNow,BigMammaRag,7,0.20327816903591156
+DoItNow,GoldFlower,3,0.18964356184005737
+GoldFlower,BigMammaRag,41,0.2189672887325287
+GoldFlower,DoItNow,6,0.18964356184005737

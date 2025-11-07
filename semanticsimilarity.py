@@ -94,11 +94,16 @@ def create_publication_similarity_matrix(similarity_matrix, metadata):
     """
     Aggregate page-level similarities to publication-level
     """
-    publications = sorted(metadata['publication_name'].unique())
+    publications = metadata['publication_name'].unique()
     n_pubs = len(publications)
+    
+    # Create publication similarity matrix
     pub_similarity = np.zeros((n_pubs, n_pubs))
     
-    print(f"\nAggregating to publication-level ({n_pubs} publications)...")
+    # Debug: Check dimensions
+    print(f"Similarity matrix shape: {similarity_matrix.shape}")
+    print(f"Metadata shape: {metadata.shape}")
+    print(f"Number of publications: {n_pubs}")
     
     for i, pub1 in enumerate(publications):
         for j, pub2 in enumerate(publications):
@@ -106,20 +111,29 @@ def create_publication_similarity_matrix(similarity_matrix, metadata):
             pages1 = metadata[metadata['publication_name'] == pub1].index.tolist()
             pages2 = metadata[metadata['publication_name'] == pub2].index.tolist()
             
-            if i == j:
-                # Within-publication: exclude diagonal (self-similarity)
-                submatrix = similarity_matrix[np.ix_(pages1, pages2)]
-                mask = ~np.eye(len(pages1), dtype=bool)
-                if mask.sum() > 0:
-                    pub_similarity[i][j] = submatrix[mask].mean()
-                else:
-                    pub_similarity[i][j] = 0
-            else:
-                # Cross-publication: all comparisons
-                submatrix = similarity_matrix[np.ix_(pages1, pages2)]
-                pub_similarity[i][j] = submatrix.mean()
+            # Debug: Check if indices are within bounds
+            max_idx1 = max(pages1) if pages1 else -1
+            max_idx2 = max(pages2) if pages2 else -1
+            
+            if max_idx1 >= similarity_matrix.shape[0] or max_idx2 >= similarity_matrix.shape[1]:
+                print(f"WARNING: Index out of bounds for {pub1} vs {pub2}")
+                print(f"  Max index pub1: {max_idx1}, pub2: {max_idx2}")
+                print(f"  Matrix shape: {similarity_matrix.shape}")
+                continue
+            
+            if len(pages1) > 0 and len(pages2) > 0:
+                # Extract submatrix for these publications
+                try:
+                    submatrix = similarity_matrix[np.ix_(pages1, pages2)]
+                    # Average similarity between publications
+                    pub_similarity[i, j] = np.mean(submatrix)
+                except IndexError as e:
+                    print(f"Error with {pub1} vs {pub2}: {e}")
+                    print(f"  pages1: {pages1[:5]}... (showing first 5)")
+                    print(f"  pages2: {pages2[:5]}... (showing first 5)")
+                    pub_similarity[i, j] = 0
     
-    # Create DataFrame
+    # Convert to DataFrame
     pub_sim_df = pd.DataFrame(
         pub_similarity,
         index=publications,
@@ -428,6 +442,9 @@ def main():
     
     # 1. Load data
     metadata = load_metadata('page_metadata.csv')
+    
+    # Reset index to ensure it matches similarity matrix dimensions
+    metadata = metadata.reset_index(drop=True)
     
     # 2. Generate embeddings - FIXED: pass the full metadata DataFrame
     embeddings_df, embeddings = generate_page_embeddings(metadata)

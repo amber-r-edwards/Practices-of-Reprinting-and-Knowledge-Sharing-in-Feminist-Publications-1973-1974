@@ -1,0 +1,12 @@
+{
+  "n_pages": 522,
+  "n_publications": 4,
+  "publications": [
+    "GoldFlower",
+    "BigMammaRag",
+    "AintIAWoman",
+    "DoItNow"
+  ],
+  "avg_within_pub_similarity": 0.2837695740163326,
+  "avg_cross_pub_similarity": 0.21014348790049553
+}
