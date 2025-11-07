@@ -1,4 +1,6 @@
 {
+  "model": "all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
   "n_pages": 522,
   "n_publications": 4,
   "publications": [
@@ -7,6 +9,13 @@
     "AintIAWoman",
     "DoItNow"
   ],
-  "avg_within_pub_similarity": 0.2837695740163326,
-  "avg_cross_pub_similarity": 0.21014348790049553
+  "pages_per_publication": {
+    "AintIAWoman": 45,
+    "BigMammaRag": 215,
+    "DoItNow": 69,
+    "GoldFlower": 193
+  },
+  "avg_within_pub_similarity": 0.2756008468568325,
+  "avg_cross_pub_similarity": 0.21014348790049553,
+  "overall_avg_similarity": 0.22316011786460876
 }

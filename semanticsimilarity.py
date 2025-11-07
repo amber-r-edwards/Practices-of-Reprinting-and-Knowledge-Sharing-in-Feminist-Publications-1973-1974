@@ -4,10 +4,10 @@ Analyzes ideological alignment across publications using sentence embeddings
 CSV outputs only - no visualizations
 """
 
-import pandas as pd
+import pandas as pd # type: ignore
 import numpy as np
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer # type: ignore
+from sklearn.metrics.pairwise import cosine_similarity # type: ignore
 from pathlib import Path
 import json
 
