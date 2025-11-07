@@ -429,8 +429,8 @@ def main():
     # 1. Load data
     metadata = load_metadata('page_metadata.csv')
     
-    # 2. Generate embeddings
-    embeddings = generate_page_embeddings(metadata['text_clean'].tolist())
+    # 2. Generate embeddings - FIXED: pass the full metadata DataFrame
+    embeddings_df, embeddings = generate_page_embeddings(metadata)
     
     # 3. Calculate similarity matrix
     similarity_matrix = calculate_similarity_matrix(embeddings)
