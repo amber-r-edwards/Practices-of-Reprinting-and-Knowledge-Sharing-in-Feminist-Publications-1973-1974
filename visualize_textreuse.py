@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt # type: ignore
 import seaborn as sns # type: ignore
 from collections import defaultdict
 import numpy as np
+import os
 
 # Set style
 plt.style.use('seaborn-v0_8-darkgrid')
@@ -26,7 +27,7 @@ def load_filtered_reuse_data(filepath='text_reuse_results.csv'):
     print(f"Removed {is_citation.sum()} citation matches")
     return filtered
 
-def create_publication_network(reuse_df, weight_by='count'):
+def create_publication_network(reuse_df, weight_by='count', output_dir='reuse_visualizations'):
     """
     Create network where nodes are publications and edges are text reuse instances
     
@@ -34,6 +35,7 @@ def create_publication_network(reuse_df, weight_by='count'):
     - reuse_df: filtered reuse results
     - weight_by: 'count' (number of matches), 'total_words' (sum of match lengths),
                  or 'avg_similarity' (average similarity score)
+    - output_dir: directory to save visualization
     """
     # Aggregate by publication pair
     agg_dict = {
@@ -73,6 +75,9 @@ def create_publication_network(reuse_df, weight_by='count'):
             avg_words=row['avg_words'],
             avg_similarity=row['avg_similarity']
         )
+    
+    # Visualize
+    visualize_publication_network(G, output_file=os.path.join(output_dir, f'network_publications_{weight_by}.png'))
     
     return G, pub_connections
 
@@ -209,7 +214,7 @@ def visualize_page_network(G, output_file='network_pages.png',
     print(f"Saved page network to {output_file}")
     plt.close()
 
-def create_page_level_heatmap(reuse_df):
+def create_page_level_heatmap(reuse_df, output_dir='reuse_visualizations'):
     """
     Create heatmap showing text reuse at the page level
     Shows which specific pages share text with other pages
@@ -291,8 +296,9 @@ def create_page_level_heatmap(reuse_df):
     plt.yticks(rotation=0, fontsize=6)
     plt.tight_layout()
     
-    plt.savefig('page_level_heatmap.png', dpi=300, bbox_inches='tight')
-    print("✅ Saved: page_level_heatmap.png")
+    output_file = os.path.join(output_dir, 'page_level_heatmap.png')
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved: {output_file}")
     plt.close()
     
     # Also create a simplified version grouped by publication
@@ -307,8 +313,7 @@ def create_page_level_heatmap(reuse_df):
     print("\nTotal matches between publications:")
     print(pub_summary.pivot(index='source_pub_only', columns='target_pub_only', values='total_matches').fillna(0))
 
-
-def create_top_pages_heatmap(reuse_df, top_n=50):
+def create_top_pages_heatmap(reuse_df, top_n=50, output_dir='reuse_visualizations'):
     """
     Create heatmap for only the top N most connected pages
     More readable than full page-level heatmap
@@ -399,55 +404,12 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
     plt.yticks(rotation=0, fontsize=7)
     plt.tight_layout()
     
-    plt.savefig(f'top_{top_n}_pages_heatmap.png', dpi=300, bbox_inches='tight')
-    print(f"✅ Saved: top_{top_n}_pages_heatmap.png")
-    plt.close()
-    
-    print(f"\nTop {top_n} most connected pages:")
-    for i, page in enumerate(top_pages[:10], 1):
-        print(f"  {i}. {page}: {int(total_counts[page])} connections")
-    
-    # Filter data to top pages
-    filtered = reuse_with_pages[
-        reuse_with_pages['source_label'].isin(top_pages) & 
-        reuse_with_pages['target_label'].isin(top_pages)
-    ].copy()
-    
-    if len(filtered) == 0:
-        print("⚠️  No data to plot after filtering")
-        return
-    
-    # Create matrix
-    page_pairs = filtered.groupby(['source_label', 'target_label']).size().reset_index(name='count')
-    matrix = pd.DataFrame(0, index=top_pages, columns=top_pages)
-    
-    for _, row in page_pairs.iterrows():
-        matrix.loc[row['source_label'], row['target_label']] = row['count']
-        matrix.loc[row['target_label'], row['source_label']] = row['count']
-    
-    # Visualize
-    fig, ax = plt.subplots(figsize=(16, 14))
-    
-    sns.heatmap(matrix, 
-                cmap='YlOrRd',
-                cbar_kws={'label': 'Match Count'},
-                square=True,
-                annot=False,
-                fmt='g',
-                ax=ax)
-    
-    plt.title(f'Top {top_n} Most Connected Pages - Text Reuse Heatmap', fontsize=14, pad=20)
-    plt.xlabel('Target Page', fontsize=10)
-    plt.ylabel('Source Page', fontsize=10)
-    plt.xticks(rotation=90, fontsize=7)
-    plt.yticks(rotation=0, fontsize=7)
-    plt.tight_layout()
-    
-    plt.savefig(f'top_{top_n}_pages_heatmap.png', dpi=300, bbox_inches='tight')
-    print(f"✅ Saved: top_{top_n}_pages_heatmap.png")
+    output_file = os.path.join(output_dir, f'top_{top_n}_pages_heatmap.png')
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved: {output_file}")
     plt.close()
 
-def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
+def create_temporal_visualization(reuse_df, output_dir='reuse_visualizations'):
     """
     Show text reuse over time
     """
@@ -496,10 +458,17 @@ def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
     ax2.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
+    output_file = os.path.join(output_dir, 'temporal_reuse.png')
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Saved temporal visualization to {output_file}")
     plt.close()
+
 def main():
+    # Create output directory
+    output_dir = 'reuse_visualizations'
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"Created output directory: {output_dir}")
+    
     # Load data
     print("Loading text reuse data...")
     reuse_df = load_filtered_reuse_data()
@@ -515,39 +484,35 @@ def main():
     
     # 1. Publication-level network
     print("\n1. Publication Network...")
-    create_publication_network(reuse_df, weight_by='count')
+    create_publication_network(reuse_df, weight_by='count', output_dir=output_dir)
     
     # 2. Page-level network
     print("\n2. Page Network...")
     page_network = create_page_network(reuse_df, metadata, min_connections=1)
-    visualize_page_network(page_network, output_file='page_network.png', 
+    visualize_page_network(page_network, output_file=os.path.join(output_dir, 'page_network.png'), 
                           title='Text Reuse Network (Page Level)')
     
     # 3. Timeline analysis
-    #print("\n3. Timeline Analysis...")
-    #create_timeline_analysis(reuse_df)
+    print("\n3. Timeline Analysis...")
+    create_temporal_visualization(reuse_df, output_dir=output_dir)
     
     # 4. Page-level heatmaps
     print("\n" + "="*80)
     print("4. Creating page-level heatmaps...")
     print("="*80)
     
-    create_top_pages_heatmap(reuse_df, top_n=50)  # Top 50 pages
-    create_page_level_heatmap(reuse_df)  # Uncomment for full heatmap (may be very large)
-    
-    # 5. Temporal visualization
-    print("\n5. Temporal Visualization...")
-    create_temporal_visualization(reuse_df)
+    create_top_pages_heatmap(reuse_df, top_n=50, output_dir=output_dir)  # Top 50 pages
+    create_page_level_heatmap(reuse_df, output_dir=output_dir)  # Full heatmap (may be very large)
     
     print("\n" + "="*80)
     print("✅ All visualizations complete!")
     print("="*80)
-    print("\nGenerated files:")
-    print("  - publication_network_count.png")
-    print("  - distribution_plots.png")
-    print("  - timeline_analysis.png")
+    print(f"\nGenerated files in {output_dir}/:")
+    print("  - network_publications_count.png")
+    print("  - page_network.png")
+    print("  - temporal_reuse.png")
     print("  - top_50_pages_heatmap.png")
-    print("  - temporal_flow.png")
+    print("  - page_level_heatmap.png")
     print("="*80)
 
 
