@@ -499,6 +499,10 @@ def main():
     # Load data
     print("Loading text reuse data...")
     reuse_df = load_filtered_reuse_data()
+
+     # Load metadata for page network
+    print("Loading metadata...")
+    metadata = pd.read_csv('page_metadata.csv')
     
     # Create all visualizations
     print("\n" + "="*80)
@@ -509,9 +513,11 @@ def main():
     print("\n1. Publication Network...")
     create_publication_network(reuse_df, weight_by='count')
     
-    # 2. Distribution analysis
-    #print("\n2. Distribution Plots...")
-    #create_distribution_plots(reuse_df)
+    # 2. Page-level network
+    print("\n2. Page Network...")
+    page_network = create_page_network(reuse_df, metadata, min_connections=1)
+    visualize_page_network(page_network, output_file='page_network.png', 
+                          title='Text Reuse Network (Page Level)')
     
     # 3. Timeline analysis
     #print("\n3. Timeline Analysis...")
