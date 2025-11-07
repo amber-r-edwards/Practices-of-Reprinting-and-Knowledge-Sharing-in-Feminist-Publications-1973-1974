@@ -195,10 +195,10 @@ def visualize_page_network(G, output_file='network_pages.png',
                           arrows=True, arrowsize=10,
                           connectionstyle='arc3,rad=0.1', ax=ax)
     
-    # Labels only for highly connected nodes
-    high_degree_nodes = {node: node for node in G.nodes() if G.degree(node) > 2}
-    nx.draw_networkx_labels(G, pos, labels=high_degree_nodes, 
-                          font_size=8, ax=ax)
+    # Labels for all nodes showing page_id
+    node_labels = {node: str(node) for node in G.nodes()}
+    nx.draw_networkx_labels(G, pos, labels=node_labels, 
+                          font_size=8, font_weight='bold', ax=ax)
     
     # Legend
     legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
