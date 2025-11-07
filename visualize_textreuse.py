@@ -443,65 +443,58 @@ def create_top_pages_heatmap(reuse_df, top_n=50):
     print(f"✅ Saved: top_{top_n}_pages_heatmap.png")
     plt.close()
 
-def create_temporal_visualization(reuse_df):
-    """Create temporal flow visualization showing when text moves between publications"""
-    
-    # Parse dates from the results CSV
+def create_temporal_visualization(reuse_df, output_file='temporal_reuse.png'):
+    """
+    Show text reuse over time
+    """
+    # Ensure dates are datetime - specify the format explicitly
     reuse_df['source_date'] = pd.to_datetime(reuse_df['source_date'], format='%m/%d/%Y', errors='coerce')
     reuse_df['target_date'] = pd.to_datetime(reuse_df['target_date'], format='%m/%d/%Y', errors='coerce')
     
-    # Filter out rows with missing dates
-    reuse_with_dates = reuse_df[
-        reuse_df['source_date'].notna() & 
-        reuse_df['target_date'].notna()
-    ].copy()
+    # Check for any invalid dates
+    invalid_dates = reuse_df['source_date'].isna().sum() + reuse_df['target_date'].isna().sum()
+    if invalid_dates > 0:
+        print(f"Warning: {invalid_dates} invalid dates found and excluded")
     
-    print(f"Matches with valid dates: {len(reuse_with_dates)}")
+    # Remove rows with invalid dates
+    reuse_df = reuse_df.dropna(subset=['source_date', 'target_date'])
     
-    if len(reuse_with_dates) == 0:
-        print("⚠️  No matches with valid dates found")
+    if len(reuse_df) == 0:
+        print("No valid dates found for temporal visualization")
         return
     
-    print(f"Date range: {reuse_with_dates['source_date'].min()} to {reuse_with_dates['target_date'].max()}")
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
     
-    # Create visualization
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
-    
-    # Plot 1: Temporal flow lines from source to target
-    for _, row in reuse_with_dates.iterrows():
-        ax1.plot([row['source_date'], row['target_date']], [0, 1],
+    # Plot 1: Timeline of reuse instances
+    for _, row in reuse_df.iterrows():
+        ax1.plot([row['source_date'], row['target_date']], [0, 1], 
                 alpha=0.3, color='steelblue')
+        ax1.scatter([row['source_date']], [0], alpha=0.6, s=50, color='green')
+        ax1.scatter([row['target_date']], [1], alpha=0.6, s=50, color='red')
     
-    ax1.set_ylabel('Source → Target')
-    ax1.set_title('Temporal Flow of Text Reuse')
     ax1.set_yticks([0, 1])
     ax1.set_yticklabels(['Source', 'Target'])
+    ax1.set_title('Text Reuse Flow Over Time', fontsize=14, fontweight='bold')
+    ax1.set_xlabel('Date', fontsize=12)
     ax1.grid(True, alpha=0.3)
     
-    # Plot 2: Time lag distribution
-    ax2.scatter(reuse_with_dates['source_date'], 
-               reuse_with_dates['time_lag_days'],
-               alpha=0.5, s=50, c=reuse_with_dates['time_lag_days'], 
-               cmap='coolwarm')
-    ax2.axhline(y=0, color='r', linestyle='--', alpha=0.3, label='Same date')
-    ax2.set_xlabel('Source Date')
-    ax2.set_ylabel('Days Between Source and Target')
-    ax2.set_title('Time Lag Between Text Reuse Instances')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
+    # Plot 2: Frequency over time
+    reuse_df['month'] = reuse_df['target_date'].dt.to_period('M')
+    monthly_counts = reuse_df.groupby('month').size()
+    
+    ax2.bar(range(len(monthly_counts)), monthly_counts.values, 
+           color='steelblue', alpha=0.7)
+    ax2.set_xticks(range(len(monthly_counts)))
+    ax2.set_xticklabels([str(m) for m in monthly_counts.index], rotation=45)
+    ax2.set_title('Text Reuse Instances Per Month', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Month', fontsize=12)
+    ax2.set_ylabel('Number of Instances', fontsize=12)
+    ax2.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
-    plt.savefig('temporal_flow.png', dpi=300, bbox_inches='tight')
-    print("✅ Saved: temporal_flow.png")
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"Saved temporal visualization to {output_file}")
     plt.close()
-    
-    # Print summary statistics
-    print(f"\nTemporal Analysis Summary:")
-    print(f"  Mean time lag: {reuse_with_dates['time_lag_days'].mean():.1f} days")
-    print(f"  Median time lag: {reuse_with_dates['time_lag_days'].median():.1f} days")
-    print(f"  Min time lag: {reuse_with_dates['time_lag_days'].min()} days")
-    print(f"  Max time lag: {reuse_with_dates['time_lag_days'].max()} days")
-    print(f"  Same-day reuse: {(reuse_with_dates['time_lag_days'] == 0).sum()} instances")
 
 def main():
     # Load data
