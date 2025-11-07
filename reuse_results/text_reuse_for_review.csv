@@ -1,0 +1,116 @@
+source_page_id,target_page_id,source_publication,target_publication,source_date,target_date,time_lag_days,source_volume,source_number,target_volume,target_number,source_text_length,target_text_length,matched_text,match_length_words,match_length_chars,similarity_score,position_text1,position_text2,match_pct_source,match_pct_target,match_length_category,match_type_auto,is_boilerplate,source_context,target_context,verified_match_type,notes
+197,529,BigMammaRag,GoldFlower,1974-08-01,1974-08-01,0,3.0,2.0,3.0,3.0,194,214,"aug. 1974. archives of sexuality and gender,",7,44,0.7927927927927928,10,10,22.68041237113402,20.5607476635514,short,possible_reuse,False,"aug. 1974. archives of sexuality and gender,","""gold flower: a twin cities newspaper for women."" gold flower, 
+aug. 1974. archives of sexuality and gender, link.gale.com/apps 
+/doc/safxwt878004820/ahsi?u=clemsonu_main 
+&sid=bookmark-ahsi. accessed 21 oct. 2025.",,
+509,163,GoldFlower,BigMammaRag,1974-06-01,1974-07-01,30,3.0,1.0,3.0,1.0,2029,8494,coalition of labor union women (cluw) was,7,41,0.6555555555555556,3,18,2.0206998521439132,0.4826936661172593,short,possible_reuse,False,"union women
+
+the coalition of labor union women (cluw) was
+formed in chicago in march 1974. cluw's pur-
+poses are to pursue political and legislative
+action in the workplace and stronger representation
+of women in union leadership. a cluw organ-
+izational me",coalition of labor union women (cluw) was,,
+43,223,AintIAWoman,BigMammaRag,1973-07-20,1974-10-01,438,3.0,5.0,3.0,4.0,2991,8344,for a year sub (4 issues). start my sub with issue no.,12,54,0.7592592592592593,482,515,1.8054162487462388,0.6471716203259827,short,possible_reuse,False,for a year sub (4 issues). start my sub with issue no.,"o is not white, not male, not middle class and not supporting patriarchy.
+
+the second wave a magazine of the new feminism
+
+box 344, cambridge a cambridge, ma 02139 vol 3 no 4
+
+corporate child care
+
+* for a year sub (4 issues). start my sub with issue no. _______ $7.50 + $2.50 postage for 1 copy of issue no. _______
+
+name ______________________________________________________
+
+address ____________________________________________________
+
+city ________",,
+38,195,AintIAWoman,BigMammaRag,1973-06-22,1974-08-01,405,3.0,4.0,3.0,2.0,4374,13804,"always carries with it the threat of death. and finally, rape is a form of mass terrorism, for the victims of rape are chosen indiscriminately, but",26,147,0.705607476635514,21,2249,3.3607681755829906,1.0649087221095335,medium,possible_reuse,False,"always carries with it the threat of death. and finally, rape is a form of mass terrorism, for the victims of rape are chosen indiscriminately, but","always carries with it the threat of death. and finally, rape is a form of mass terrorism, for the victims of rape are chosen indiscriminately, but",,
+38,195,AintIAWoman,BigMammaRag,1973-06-22,1974-08-01,405,3.0,4.0,3.0,2.0,4374,13804,women who cause rape by being,6,29,0.7160493827160493,55,2283,0.6630086877000457,0.21008403361344538,short,possible_reuse,False,women who cause rape by being,women who cause rape by being,,
+86,307,BigMammaRag,DoItNow,1973-03-01,1973-11-01,245,1.0,3.0,,,7631,6545,to the family institution is repugnant to the idea of a woman adopting a,14,72,0.898876404494382,407,811,0.9435198532302451,1.1000763941940412,short,possible_reuse,False,to the family institution is repugnant to the idea of a woman adopting a,"rt and noted that the courts have come a long way from the judicial sexism found in cases such as bradwell v. 
+illinois (1873), where the court concluded that: 
+
+the harmony * * * which belongs * * * to the family institution is repugnant to the idea of a woman 
+adopting a distinct and independent career from that of her husband. * * * the paramount destiny and 
+mission of woman are to fulfill the offices * * * of wife and mother * * * .” 
+
+with the backdrop of that q",,
+509,224,GoldFlower,BigMammaRag,1974-06-01,1974-10-01,122,3.0,1.0,3.0,4.0,2029,6668,the coalition of labor union women,6,34,0.703030303030303,2,49,1.6757023164120255,0.5098980203959208,short,possible_reuse,False,"union women
+
+the coalition of labor union women (cluw) was
+formed in chicago in march 1974. cluw's pur-
+poses are to pursue political and legislative
+action in the workplace and stronger representation
+of women in union leadership. a cluw organ-
+i",the coalition of labor union women,,
+434,329,GoldFlower,DoItNow,1973-09-01,1973-09-01,0,2.0,6.0,,,180,247,"sept. 1973. archives of sexuality and gender,",7,45,0.8208092485549133,4,16,25.0,18.218623481781375,short,possible_reuse,False,"sept. 1973. archives of sexuality and gender,","sept. 1973. archives of sexuality and gender,",,
+38,195,AintIAWoman,BigMammaRag,1973-06-22,1974-08-01,405,3.0,4.0,3.0,2.0,4374,13804,rape is an act of aggression in which the victim is denied her self-determination. it is an act of violence,20,107,0.7737704918032787,0,2219,2.446273433927755,0.7751376412634019,medium,possible_reuse,False,"rape is an act of aggression in which the victim is denied her 
+self-determination. it is an act 
+of violence which always carries 
+with it the threat of death. and 
+finally, rape is a form of mass terrorism, for the victims of rape are chosen indiscriminately, 
+but our male-dominated culture tells us that",rape is an act of aggression in which the victim is denied her self-determination. it is an act of violence,,
+492,137,GoldFlower,BigMammaRag,1974-01-01,1974-05-01,120,2.0,9.0,2.0,7.0,4588,10935,a child whether or not they are now living together.,10,52,0.696078431372549,579,1863,1.1333914559721012,0.4755372656607224,short,possible_reuse,False,a child whether or not they are now living together.,a child whether or not they are now living together.,,
+38,195,AintIAWoman,BigMammaRag,1973-06-22,1974-08-01,405,3.0,4.0,3.0,2.0,4374,13804,or in the wrong place at the wrong,8,34,0.91005291005291,62,2290,0.7773205304069501,0.24630541871921183,short,possible_reuse,False," death. and 
+finally, rape is a form of mass terrorism, for the victims of rape are chosen indiscriminately, 
+but our male-dominated culture tells us that it is women who cause 
+rape by being immoral or in the wrong place at the wrong time-- 
+in essence, by behaving as though we were free. 
+
+(vietnam: a feminist analysis (a 
+.t.a.w. - august 18, 1972) 
+
+a 24-hour rape crisis line is being started in iowa city. we are 
+in need of v",or in the wrong place at the wrong,,
+511,155,GoldFlower,BigMammaRag,1974-06-01,1974-06-01,0,3.0,1.0,2.0,8.0,176,194,"june 1974. archives of sexuality and gender,",7,44,0.8417910447761194,4,10,25.0,22.68041237113402,short,possible_reuse,False,"june 1974. archives of sexuality and gender,","june 1974. archives of sexuality and gender,",,
+265,117,DoItNow,BigMammaRag,1973-12-01,1974-04-01,121,,,2.0,6.0,2940,10058,to the foreign assistance act of,6,32,0.6666666666666666,55,1337,1.0884353741496597,0.3181547027241996,short,possible_reuse,False,to the foreign assistance act of,"n still get the shaft because they don't have the resources to pay for an abortion. so out comes the closet abortion, deadly for any woman. the committee was successful in attaching such an amendment to the foreign assistance act of 1973. fortunately (though they would like it to be otherwise), federal funds can still be used to dispense contraceptives. last year, just before the social security act amendments were going to the ",,
+183,525,BigMammaRag,GoldFlower,1974-08-01,1974-08-01,0,3.0,2.0,3.0,3.0,7384,1735,"1724 gaylord st. denver, co. 80206",6,34,0.703030303030303,1242,250,0.4604550379198266,1.9596541786743515,short,possible_reuse,False,"1724 gaylord st. denver, co. 80206","1724 gaylord st. denver, co. 80206",,
+518,255,GoldFlower,BigMammaRag,1974-08-01,1974-11-01,92,3.0,3.0,3.0,5.0,6055,6693,raise grave constitutional questions under the first,7,52,0.6639004149377593,869,741,0.8587943848059455,0.776931122067832,short,possible_reuse,False,raise grave constitutional questions under the first,raise grave constitutional questions under the first,,
+298,117,DoItNow,BigMammaRag,1974-01-01,1974-04-01,90,,,2.0,6.0,2994,10058,of their children and to the income of,8,38,0.9032258064516129,155,1223,1.2692050768203071,0.37780870948498707,short,possible_reuse,False,"te expansion of flexible hours employment practices by all public
+and private employers.
+
+we feel the bill could especially benefit parents by making it possible for both to contribute to
+the rearing of their children and to the income of the family.
+
+write to the chairman of the senate post office and civil service commit-
+tee, senator gale mcgee (d-wyo) with a copy to your own senators,
+urging favorable committee action.
+
+powell hea","y against women with children imposed by the basic pattern of working hours in our society.” now feels that the bill could especially benefit parents in leaving both free to contribute to the raising of their children and to the income of their family.
+
+the right to life committee is really moving in washington. ms. andrikopoulos said the committee is introducing amendments to any funding bill they can to prohibit the use of any feder",,
+43,191,AintIAWoman,BigMammaRag,1973-07-20,1974-08-01,377,3.0,5.0,3.0,2.0,2991,8436,free to sisters in prison or,6,28,0.6857142857142857,315,1041,0.9361417586091608,0.33191085822664773,short,possible_reuse,False,free to sisters in prison or,free to sisters in prison or,,
+525,200,GoldFlower,BigMammaRag,1974-08-01,1974-09-01,31,3.0,3.0,3.0,3.0,1735,8348,"bulk rates available 1724 gaylord st. denver, co. 80206",9,55,0.7878787878787878,247,1347,3.170028818443804,0.6588404408241495,short,possible_reuse,False,"bulk rates available 1724 gaylord st. denver, co. 80206","bulk rates available 1724 gaylord st. denver, co. 80206",,
+44,284,AintIAWoman,DoItNow,1973-07-20,1974-02-01,196,3.0,5.0,,,192,255,"pp. [1]+. archives of sexuality and gender,",7,43,0.8630952380952381,9,18,22.395833333333336,16.862745098039216,short,possible_reuse,False,"""ain't a woman?"" ain't a woman?, 20 july 1973, pp. [1]+. archives of sexuality and gender, link.gale.com/apps/doc/itmzbt182587746/ahsi?u=clemsonu_main&sid=bookmark-ahsi. accessed 21 oct. 2025.","pp. [1]+. archives of sexuality and gender,",,
+368,115,GoldFlower,BigMammaRag,1974-02-01,1974-04-01,59,2.0,10.0,2.0,6.0,3590,10370,the national black feminist organization held its first,8,55,0.7053140096618358,0,132,1.532033426183844,0.5303760848601736,short,possible_reuse,False,the national black feminist organization held its first,"to know exactly when to fly out of the ferry’s path. and in new york city in august of 1973 there was a press conference announcing the existence of a black feminist organization.
+
+late last november the national black feminist organization held its first conference in new york. about 400 women from widely diverse backgrounds attended plenary sessions, participated in informal discussions and workshops covering issues that included welfare, child care",,
+529,197,GoldFlower,BigMammaRag,1974-08-01,1974-08-01,0,3.0,3.0,3.0,2.0,214,194,"aug. 1974. archives of sexuality and gender,",7,44,0.7927927927927928,10,10,20.5607476635514,22.68041237113402,short,possible_reuse,False,"""gold flower: a twin cities newspaper for women."" gold flower, 
+aug. 1974. archives of sexuality and gender, link.gale.com/apps 
+/doc/safxwt878004820/ahsi?u=clemsonu_main 
+&sid=bookmark-ahsi. accessed 21 oct. 2025.","aug. 1974. archives of sexuality and gender,",,
+492,137,GoldFlower,BigMammaRag,1974-01-01,1974-05-01,120,2.0,9.0,2.0,7.0,4588,10935,i am presently working on my,6,28,0.6794258373205742,454,1827,0.6102877070619006,0.25605852766346593,short,possible_reuse,False,i am presently working on my,i am presently working on my,,
+273,137,DoItNow,BigMammaRag,1974-02-01,1974-05-01,89,,,2.0,7.0,3644,10935,"barbara bryant, school of social work, california state",8,55,0.6891385767790262,260,1883,1.5093304061470911,0.5029721079103796,short,possible_reuse,False,"nt or sale from karen decrow, 116 benedict avenue, syracuse, n.y. 13210..... sexuality
+and lesbianism task force coordinator sidney abbott announces new research on lesbian
+mothers being conducted by barbara bryant, school of social work, california state university,
+sacramento, ca 95819. the questionnaire, for which correspondence will be confidential
+
+and can be anonymous, was developed in cooperation with now member del martin and
+payits liyohi....","barbara bryant, school of social work, california state",,
+86,307,BigMammaRag,DoItNow,1973-03-01,1973-11-01,245,1.0,3.0,,,7631,6545,and independent career from that of her,7,39,0.8387096774193549,423,826,0.5110732538330494,0.5958747135217723,short,possible_reuse,False,and independent career from that of her," cases such as bradwell v. 
+illinois (1873), where the court concluded that: 
+
+the harmony * * * which belongs * * * to the family institution is repugnant to the idea of a woman 
+adopting a distinct and independent career from that of her husband. * * * the paramount destiny and 
+mission of woman are to fulfill the offices * * * of wife and mother * * * .” 
+
+with the backdrop of that quotation, the supreme court ventured again, not on",,
+44,271,AintIAWoman,DoItNow,1973-07-20,1973-12-01,134,3.0,5.0,,,192,259,"1973, pp. [1]+. archives of sexuality and gender,",8,49,0.7941176470588235,8,17,25.520833333333332,18.91891891891892,short,possible_reuse,False,"""ain't a woman?"" ain't a woman?, 20 july 1973, pp. [1]+. archives of sexuality and gender, link.gale.com/apps/doc/itmzbt182587746/ahsi?u=clemsonu_main&sid=bookmark-ahsi. accessed 21 oct. 2025.","1973, pp. [1]+. archives of sexuality and gender,",,
+158,524,BigMammaRag,GoldFlower,1974-07-01,1974-08-01,31,3.0,1.0,3.0,3.0,6875,3356,studies are controlled by men or locked into a system that does not allow adequate,15,82,0.9025974025974026,414,295,1.1927272727272726,2.443384982121573,short,quoted_passage,False," that there will be greater academic freedom than found at any college or university offering women’s studies.
+
+“present courses leave something to be desired,” she said. “in many schools the women’s studies are controlled by men or locked into a system that does not allow adequate freedom for maximum intellectual growth.”
+
+dr. peters, of goddard college in plainfield, vt., and brooklyn, n.y., told how the institute got its name.
+
+“the name was taken from the sagaris, the doubl",studies are controlled by men or locked into a system that does not allow adequate,,

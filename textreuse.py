@@ -5,6 +5,12 @@ from datetime import datetime
 import re
 from pathlib import Path
 import json
+import os
+
+# Create output directory
+output_dir = 'reuse_results'
+os.makedirs(output_dir, exist_ok=True)
+print(f"Created output directory: {output_dir}")
 
 # Load your metadata
 metadata = pd.read_csv('page_metadata.csv')
@@ -225,8 +231,9 @@ reuse_results = compare_all_pages(
 )
 
 # Save results
-reuse_results.to_csv('text_reuse_results.csv', index=False)
-print(f"Saved {len(reuse_results)} matches to text_reuse_results.csv")
+output_file = os.path.join(output_dir, 'text_reuse_results.csv')
+reuse_results.to_csv(output_file, index=False)
+print(f"Saved {len(reuse_results)} matches to {output_file}")
 
 def calculate_match_metrics(reuse_df):
     """
@@ -308,7 +315,9 @@ reuse_results = identify_boilerplate(reuse_results)
 
 # Create filtered version without boilerplate
 reuse_meaningful = reuse_results[~reuse_results['is_boilerplate']].copy()
-reuse_meaningful.to_csv('text_reuse_filtered.csv', index=False)
+filtered_output_file = os.path.join(output_dir, 'text_reuse_filtered.csv')
+reuse_meaningful.to_csv(filtered_output_file, index=False)
+print(f"Saved filtered results to {filtered_output_file}")
 
 def create_review_file(reuse_df, metadata, output_file='text_reuse_for_review.csv', sample_size=50):
     """
@@ -359,4 +368,14 @@ def create_review_file(reuse_df, metadata, output_file='text_reuse_for_review.cs
     review_df.to_csv(output_file, index=False)
     print(f"Created review file with {len(review_df)} samples: {output_file}")
 
-create_review_file(reuse_meaningful, metadata)
+review_output_file = os.path.join(output_dir, 'text_reuse_for_review.csv')
+create_review_file(reuse_meaningful, metadata, output_file=review_output_file)
+
+print(f"\n" + "="*50)
+print("✅ Text reuse analysis complete!")
+print("="*50)
+print(f"Generated files in {output_dir}/:")
+print("  - text_reuse_results.csv (all matches)")
+print("  - text_reuse_filtered.csv (without boilerplate)")
+print("  - text_reuse_for_review.csv (sample for manual review)")
+print("="*50)
