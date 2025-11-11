@@ -10,7 +10,7 @@ import os
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
-def load_reuse_data(filepath='text_reuse_results.csv'):
+def load_reuse_data(filepath='reuse_results/text_reuse_filtered.csv'):
     """Load reuse data (citations already filtered in preprocessing)"""
     df = pd.read_csv(filepath)
     
