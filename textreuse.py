@@ -7,34 +7,6 @@ from pathlib import Path
 import json
 import os
 
-# Create output directory
-output_dir = 'reuse_results'
-os.makedirs(output_dir, exist_ok=True)
-print(f"Created output directory: {output_dir}")
-
-# Load your metadata
-metadata = pd.read_csv('page_metadata.csv')
-
-# Add page_id if you don't have one
-page_id_added = False
-if 'page_id' not in metadata.columns:
-    metadata['page_id'] = range(len(metadata))
-    page_id_added = True
-
-# Convert issue_date to datetime for temporal analysis
-metadata['issue_date'] = pd.to_datetime(metadata['issue_date'])
-
-# Sort by date (important for directionality)
-metadata = metadata.sort_values('issue_date').reset_index(drop=True)
-
-# Save if we added page_id
-if page_id_added:
-    metadata.to_csv('page_metadata.csv', index=False)
-    print("✅ Added page_id column to page_metadata.csv")
-
-print(f"Loaded {len(metadata)} pages from {metadata['publication_name'].nunique()} publications")
-print(f"Date range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
-
 def preprocess_text(text):
     """
     Light preprocessing to improve matching without losing content
@@ -54,12 +26,6 @@ def preprocess_text(text):
     # text = text.replace('0', 'o')  # If you see this pattern
     
     return text.strip()
-
-# Add preprocessed column
-metadata['text_clean'] = metadata['text'].apply(preprocess_text)
-
-# Calculate text length for later use
-metadata['text_length'] = metadata['text_clean'].apply(len)
 
 def find_text_matches(text1, text2, min_words=6, similarity_threshold=0.65):
     """
@@ -113,7 +79,6 @@ def find_text_matches(text1, text2, min_words=6, similarity_threshold=0.65):
     
     return matches
 
-# Alternative: Character-based matching for shorter passages
 def find_text_matches_chars(text1, text2, min_chars=100, similarity_threshold=0.65):
     """
     Character-based matching - useful for shorter passages or poetry
@@ -221,20 +186,6 @@ def compare_all_pages(metadata, min_words=6, similarity_threshold=0.65,
     
     return pd.DataFrame(results)
 
-# Run the comparison
-print("Starting text reuse detection...")
-reuse_results = compare_all_pages(
-    metadata, 
-    min_words=6,
-    similarity_threshold=0.65,
-    same_pub=False  # Only cross-publication for now
-)
-
-# Save results
-output_file = os.path.join(output_dir, 'text_reuse_results.csv')
-reuse_results.to_csv(output_file, index=False)
-print(f"Saved {len(reuse_results)} matches to {output_file}")
-
 def calculate_match_metrics(reuse_df):
     """
     Add additional metrics to characterize matches
@@ -262,8 +213,6 @@ def calculate_match_metrics(reuse_df):
     
     return reuse_df
 
-reuse_results = calculate_match_metrics(reuse_results)
-
 def classify_match_type(row):
     """
     Automatically classify the type of text reuse
@@ -289,12 +238,6 @@ def classify_match_type(row):
     else:
         return 'possible_reuse'
 
-reuse_results['match_type_auto'] = reuse_results.apply(classify_match_type, axis=1)
-
-# Summary of match types
-print("\nMatch type distribution:")
-print(reuse_results['match_type_auto'].value_counts())
-
 def identify_boilerplate(reuse_df, min_occurrences=3):
     """
     Flag matches that appear too frequently (likely boilerplate)
@@ -310,14 +253,6 @@ def identify_boilerplate(reuse_df, min_occurrences=3):
     print(f"Flagged {reuse_df['is_boilerplate'].sum()} matches as boilerplate")
     
     return reuse_df
-
-reuse_results = identify_boilerplate(reuse_results)
-
-# Create filtered version without boilerplate
-reuse_meaningful = reuse_results[~reuse_results['is_boilerplate']].copy()
-filtered_output_file = os.path.join(output_dir, 'text_reuse_filtered.csv')
-reuse_meaningful.to_csv(filtered_output_file, index=False)
-print(f"Saved filtered results to {filtered_output_file}")
 
 def create_review_file(reuse_df, metadata, output_file='text_reuse_for_review.csv', sample_size=50):
     """
@@ -368,14 +303,92 @@ def create_review_file(reuse_df, metadata, output_file='text_reuse_for_review.cs
     review_df.to_csv(output_file, index=False)
     print(f"Created review file with {len(review_df)} samples: {output_file}")
 
-review_output_file = os.path.join(output_dir, 'text_reuse_for_review.csv')
-create_review_file(reuse_meaningful, metadata, output_file=review_output_file)
+def main():
+    """Main execution function."""
+    print("="*70)
+    print("TEXT REUSE ANALYSIS")
+    print("Feminist Publications 1973-1974")
+    print("="*70)
+    
+    # Create output directory
+    output_dir = 'reuse_results'
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"Created output directory: {output_dir}")
 
-print(f"\n" + "="*50)
-print("✅ Text reuse analysis complete!")
-print("="*50)
-print(f"Generated files in {output_dir}/:")
-print("  - text_reuse_results.csv (all matches)")
-print("  - text_reuse_filtered.csv (without boilerplate)")
-print("  - text_reuse_for_review.csv (sample for manual review)")
-print("="*50)
+    # Load your metadata
+    metadata = pd.read_csv('page_metadata.csv')
+
+    # Add page_id if you don't have one
+    page_id_added = False
+    if 'page_id' not in metadata.columns:
+        metadata['page_id'] = range(len(metadata))
+        page_id_added = True
+
+    # Convert issue_date to datetime for temporal analysis
+    metadata['issue_date'] = pd.to_datetime(metadata['issue_date'])
+
+    # Sort by date (important for directionality)
+    metadata = metadata.sort_values('issue_date').reset_index(drop=True)
+
+    # Save if we added page_id
+    if page_id_added:
+        metadata.to_csv('page_metadata.csv', index=False)
+        print("✅ Added page_id column to page_metadata.csv")
+
+    print(f"Loaded {len(metadata)} pages from {metadata['publication_name'].nunique()} publications")
+    print(f"Date range: {metadata['issue_date'].min()} to {metadata['issue_date'].max()}")
+
+    # Add preprocessed column
+    metadata['text_clean'] = metadata['text'].apply(preprocess_text)
+
+    # Calculate text length for later use
+    metadata['text_length'] = metadata['text_clean'].apply(len)
+
+    # Run the comparison
+    print("Starting text reuse detection...")
+    reuse_results = compare_all_pages(
+        metadata, 
+        min_words=6,
+        similarity_threshold=0.65,
+        same_pub=False  # Only cross-publication for now
+    )
+
+    # Save results
+    output_file = os.path.join(output_dir, 'text_reuse_results.csv')
+    reuse_results.to_csv(output_file, index=False)
+    print(f"Saved {len(reuse_results)} matches to {output_file}")
+
+    # Calculate additional metrics
+    reuse_results = calculate_match_metrics(reuse_results)
+
+    # Classify match types
+    reuse_results['match_type_auto'] = reuse_results.apply(classify_match_type, axis=1)
+
+    # Summary of match types
+    print("\nMatch type distribution:")
+    print(reuse_results['match_type_auto'].value_counts())
+
+    # Identify boilerplate
+    reuse_results = identify_boilerplate(reuse_results)
+
+    # Create filtered version without boilerplate
+    reuse_meaningful = reuse_results[~reuse_results['is_boilerplate']].copy()
+    filtered_output_file = os.path.join(output_dir, 'text_reuse_filtered.csv')
+    reuse_meaningful.to_csv(filtered_output_file, index=False)
+    print(f"Saved filtered results to {filtered_output_file}")
+
+    # Create review file
+    review_output_file = os.path.join(output_dir, 'text_reuse_for_review.csv')
+    create_review_file(reuse_meaningful, metadata, output_file=review_output_file)
+    
+    print(f"\n" + "="*50)
+    print("✅ Text reuse analysis complete!")
+    print("="*50)
+    print(f"Generated files in {output_dir}/:")
+    print("  - text_reuse_results.csv (all matches)")
+    print("  - text_reuse_filtered.csv (without boilerplate)")
+    print("  - text_reuse_for_review.csv (sample for manual review)")
+    print("="*50)
+
+if __name__ == "__main__":
+    main()
