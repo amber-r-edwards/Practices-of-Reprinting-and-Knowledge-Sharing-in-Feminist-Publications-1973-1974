@@ -26,28 +26,29 @@ TextAnalysisProject/
 ├── README.md                           # This file
 ├── .gitignore                          # Excludes PDFs, virtual environment, debug files
 ├── venv/                               # [IGNORED] Python virtual environment
-├── pdfs/                               # [IGNORED] Original PDF source files
-├── data/                               # Processed text files and metadata
-│   ├── ocr_output/                     # Individual page text files from OCR
-│   └── page_metadata.csv               # Master metadata file linking all analyses
+├── pdfs/                               # [IGNORED] Original PDF source files - obtained from GALE Herstory archive
+├── txtfiles/                           # Processed text files and metadata - subdirectory for each publication
+│   ├── AintIAWoman/                    # Feminist zine published by the Ain't I A Woman Collective of Iowa City, Iowa
+│   ├── BigMammaRag/                    # Feminist zine published out of Denver, CO
+|   ├── DoItNow/                        # Monthly Newsletter of the National Organization for Women
+|   └── GoldFlower/                     # Feminist zine published out of Minneapolis-St. Paul, Minnesota
 ├── reuse_results/                      # Text reuse analysis outputs
 │   ├── text_reuse_results.csv          # All detected matches
 │   ├── text_reuse_filtered.csv         # Matches excluding boilerplate
 │   └── text_reuse_for_review.csv       # Sample for manual verification
 ├── reuse_visualizations/               # Text reuse visualizations
-│   ├── network_publications_count.png  # Publication-level network
-│   ├── page_network.png                # Page-level network with IDs
+│   ├── network_publications_count.png  # Publication-level network generated from text_reuse_filtered.csv
+│   ├── page_network.png                # Page-level network with page_IDs (sortraceable to page_metadata.csv)
 │   ├── temporal_reuse.png              # Timeline of text sharing
 │   ├── top_50_pages_heatmap.png        # Most connected pages heatmap
 │   └── page_level_heatmap.png          # Full page similarity matrix
 ├── semantic_results/                   # Semantic similarity outputs (experimental)
-├── scripts/                            # Core analysis scripts
-│   ├── ocr_processing.py               # PDF to text conversion
-│   ├── metadatacsv.py                  # Generates page metadata
-│   ├── textreuse.py                    # Text reuse detection
-│   ├── visualize_textreuse.py          # Text reuse visualizations
-│   ├── semanticsimilarity.py           # Semantic analysis (experimental)
-│   └── visualize_semanticsimilarity.py # Semantic visualizations (experimental)
+├── ocr_processing.py                   # PDF to text conversion
+├── metadatacsv.py                      # Generates page metadata
+├── textreuse.py                        # Text reuse detection
+├── visualize_textreuse.py              # Text reuse visualizations
+├── semanticsimilarity.py               # Semantic analysis (experimental)
+├── visualize_semanticsimilarity.py     # Semantic visualizations (experimental)
 └── debug.py                            # [IGNORED] Development utilities
 ```
 
@@ -115,16 +116,6 @@ python semanticsimilarity.py          # Generate semantic embeddings
 python visualize_semanticsimilarity.py # Create semantic visualizations
 ```
 **Note**: While originally intended as a dual approach to complement literal text reuse with ideological similarity analysis, the semantic similarity method proved ineffective for this dataset. The high variability in zine content at both page and publication levels, combined with the small scale and already-assumed ideological alignment of these publications, made semantic analysis less historically meaningful. The scripts and results are preserved here for methodological transparency, but findings from semantic analysis are excluded from the main results.
-
-## Results
-
-The analysis successfully identifies patterns of text circulation among feminist publications, revealing:
-- Direct reprints and modified republications
-- Network connections between specific pages and publications  
-- Temporal patterns showing information flow and lag times
-- Hub pages that served as sources for multiple republications
-
-The visualizations provide clear evidence of the collaborative and networked nature of feminist publishing during this period, supporting historical arguments about the underground press as a shared information ecosystem.
 
 ## Contact
 
