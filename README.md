@@ -49,6 +49,7 @@ TextAnalysisProject/
 ├── visualize_textreuse.py              # Text reuse visualizations
 ├── semanticsimilarity.py               # Semantic analysis (experimental)
 ├── visualize_semanticsimilarity.py     # Semantic visualizations (experimental)
+├── requirements.txt                    # required packages for replication
 └── debug.py                            # [IGNORED] Development utilities
 ```
 
@@ -60,7 +61,7 @@ TextAnalysisProject/
 
 ### Python Dependencies
 ```bash
-pip install pandas numpy matplotlib seaborn networkx scikit-learn sentence-transformers
+pip install -r requirements.txt
 ```
 
 ### Additional Requirements

@@ -3,3 +3,10 @@ pillow
 pdf2image 
 openai
 tesseract
+pandas 
+numpy 
+matplotlib 
+seaborn 
+networkx 
+scikit-learn 
+sentence-transformers
