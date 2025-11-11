@@ -121,4 +121,3 @@ python visualize_semanticsimilarity.py # Create semantic visualizations
 ## Contact
 
 For questions about methodology or to report issues, please open a GitHub issue or contact the project maintainer.
-```
