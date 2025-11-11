@@ -10,22 +10,12 @@ import os
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
-def load_filtered_reuse_data(filepath='text_reuse_results.csv'):
-    """Load FULL reuse data with citation filtering only"""
+def load_reuse_data(filepath='text_reuse_results.csv'):
+    """Load reuse data (citations already filtered in preprocessing)"""
     df = pd.read_csv(filepath)
     
-    # Filter citations only
-    citation_keywords = ['archives of sexuality and gender', 'gale', 'cengage']
-    is_citation = df['matched_text'].apply(
-        lambda x: any(kw in x.lower() for kw in citation_keywords)
-    )
-    
-    # Keep everything except citations
-    filtered = df[~is_citation].copy()
-    
-    print(f"Loaded {len(filtered)} matches for visualization")
-    print(f"Removed {is_citation.sum()} citation matches")
-    return filtered
+    print(f"Loaded {len(df)} matches for visualization")
+    return df
 
 def create_publication_network(reuse_df, weight_by='count', output_dir='reuse_visualizations'):
     """
@@ -471,7 +461,7 @@ def main():
     
     # Load data
     print("Loading text reuse data...")
-    reuse_df = load_filtered_reuse_data()
+    reuse_df = load_reuse_data()
 
      # Load metadata for page network
     print("Loading metadata...")
