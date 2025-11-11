@@ -1,15 +1,3 @@
-- ocr_processing - turns PDFs to images, transcribes images using Tessaract and AI correction, compiles pages back into one txt file
-    - files - Ain't I A Woman, Big Mamma Rag, Do it NOW, and Gold Flower - issues all from 1973-1974
-- created CSV metadata file with information for each page and a page_id for referencing
-- text reuse to track direct sharing between the publications - written to produce small scale exploration of reprinting across zines that could be duplicated at a much larger scale (with more effective results)
-    - minimum match length settled on 6 words, similarity threshold of .65 - allows for small variations
-    - output of pairs of matching text segments with the source/target pages identified via page_id that references back to the metadata CSV file
-        - categorized by match type (not working the way expected - woudl be more effective at a much larger scale i think)
-        - identifies directionality and time lag between publications
-- visualizations of text reuse: heat map (at page and pub level) , network analysis (at page and pub level), and temporal visualization of reuse
-- semantic similarity - attempt to track ideological sharing between the publications - ineffective both because of the sace and general content of zines being so variable at the page and publication level, and because it is fairly safe to assume that the ideological similarity of these publications are moderately high (not a very interesting historical quesiton)
-    - left in results just for visibility that the method was attempted - originally intended to be a comparison between the literal and ideological sharing
-
 # Text Analysis Project: Exploring Text Reuse in 1970s Feminist Publications
 
 This project analyzes patterns of text reuse across four feminist publications from 1973-1974: *Ain't I A Woman*, *Big Mamma Rag*, *Do it NOW*, and *Gold Flower*. The analysis tracks direct textual sharing between publications to understand information networks and reprinting practices in the feminist underground press.
@@ -17,8 +5,6 @@ This project analyzes patterns of text reuse across four feminist publications f
 ## Project Overview
 
 This computational text analysis project employs digital humanities methods to examine how content circulated among feminist publications. The analysis focuses on identifying and visualizing patterns of text reuse, from direct reprints to modified passages, providing insights into the collaborative and networked nature of feminist publishing. As a small scale case study, one goal of this project was to generate scripts that could be reproduced to handle a larger corpus of publications across a longer period of time.
-
-### Methods
 
 ### Methods
 
@@ -32,29 +18,6 @@ This computational text analysis project employs digital humanities methods to e
 ### Key Parameters
 - Minimum match length: 6 words
 - Similarity threshold: 0.65 (allows for small variations in OCR and reprinting)
-- Citation filtering to remove database/archival boilerplate text
-
-## Project Structure
-```markdown
-# Text Analysis Project: Exploring Text Reuse in 1970s Feminist Publications
-
-This project analyzes patterns of text reuse across four feminist publications from 1973-1974: *Ain't I A Woman*, *Big Mamma Rag*, *Do it NOW*, and *Gold Flower*. The analysis tracks direct textual sharing between publications to understand information networks and reprinting practices in the feminist underground press.
-
-## Project Overview
-
-This computational text analysis project employs digital humanities methods to examine how content circulated among feminist publications during a pivotal period in the women's liberation movement. The analysis focuses on identifying and visualizing patterns of text reuse, from direct reprints to modified passages, providing insights into the collaborative and networked nature of feminist publishing.
-
-### Methods
-
-- **OCR Processing**: Converts PDF scans to machine-readable text using Tesseract OCR with AI-assisted correction
-- **Text Reuse Detection**: Identifies shared text passages using sequence matching algorithms with configurable similarity thresholds
-- **Network Analysis**: Visualizes relationships between publications and individual pages based on shared content
-- **Temporal Analysis**: Tracks directionality and time lag in text sharing patterns
-
-### Key Parameters
-- Minimum match length: 6 words
-- Similarity threshold: 0.65 (allows for small variations in OCR and reprinting)
-- Citation filtering to remove database/archival boilerplate text
 
 ## Project Structure
 
@@ -114,7 +77,7 @@ python ocr_processing.py
 ```
 - Converts PDF files to individual page text files
 - Requires source PDFs in the `pdfs/` directory
-- Outputs text files to `data/ocr_output/`
+- Outputs text files to `txtfiles/` and respective directories for each publication
 - Includes OCR error correction and text cleaning
 
 ### 2. Metadata Generation
@@ -151,7 +114,6 @@ python visualize_textreuse.py
 python semanticsimilarity.py          # Generate semantic embeddings
 python visualize_semanticsimilarity.py # Create semantic visualizations
 ```
-
 **Note**: While originally intended as a dual approach to complement literal text reuse with ideological similarity analysis, the semantic similarity method proved ineffective for this dataset. The high variability in zine content at both page and publication levels, combined with the small scale and already-assumed ideological alignment of these publications, made semantic analysis less historically meaningful. The scripts and results are preserved here for methodological transparency, but findings from semantic analysis are excluded from the main results.
 
 ## Results
