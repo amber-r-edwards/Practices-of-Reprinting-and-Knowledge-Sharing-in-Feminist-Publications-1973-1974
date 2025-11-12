@@ -1,4 +1,4 @@
-# Text Analysis Project: Exploring Text Reuse in 1970s Feminist Publications
+# Practices of Reprinting and Knowledge Sharing in Feminist Publications, 1973-1974
 
 This project analyzes patterns of text reuse across four feminist publications from 1973-1974: *Ain't I A Woman*, *Big Mamma Rag*, *Do it NOW*, and *Gold Flower*. The analysis tracks direct textual sharing between publications to understand information networks and reprinting practices in the feminist underground press.
 
